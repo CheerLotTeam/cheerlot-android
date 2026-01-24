@@ -4,18 +4,24 @@ import { StyleSheet, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LineupScreen from './src/screens/LineupScreen';
 import AllPlayersScreen from './src/screens/AllPlayersScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import LineupPlayerScreen from './src/screens/LineupPlayerScreen';
+import CheerPlayerScreen from './src/screens/CheerPlayerScreen';
 import TeamSelectScreen from './src/screens/TeamSelectScreen';
 import LiquidGlassTabBar from './src/components/LiquidGlassTabBar';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamLoaded, setTeamLoaded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     // TODO: 개발 테스트 후 아래 줄 제거
@@ -43,21 +49,40 @@ export default function App() {
     return null;
   }
 
+  function HomeTabs() {
+    return (
+      <Tab.Navigator
+        tabBar={(props) => (
+          <LiquidGlassTabBar
+            {...props}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        )}
+        screenOptions={{ headerShown: false }}
+      >
+        <Tab.Screen name="Lineup" component={LineupScreen} />
+        <Tab.Screen name="AllPlayers">
+          {() => <AllPlayersScreen searchQuery={searchQuery} />}
+        </Tab.Screen>
+      </Tab.Navigator>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
         <View style={styles.container}>
-          <Tab.Navigator
-            tabBar={(props) => <LiquidGlassTabBar {...props} />}
-            screenOptions={{ headerShown: false }}
-          >
-            <Tab.Screen name="Lineup" component={LineupScreen} />
-            <Tab.Screen name="AllPlayers" component={AllPlayersScreen} />
-          </Tab.Navigator>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="HomeTabs" component={HomeTabs} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="LineupPlayer" component={LineupPlayerScreen} />
+            <Stack.Screen name="CheerPlayer" component={CheerPlayerScreen} />
+          </Stack.Navigator>
           {!selectedTeam && (
             <TeamSelectScreen onTeamSelect={(team) => setSelectedTeam(team)} />
           )}
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
         </View>
       </NavigationContainer>
     </SafeAreaProvider>

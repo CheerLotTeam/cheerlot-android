@@ -81,14 +81,14 @@ const styles = StyleSheet.create({
   },
   modal: {
     flex: 1,
-    backgroundColor: colors.grayscale.black,
+    backgroundColor: colors.background.primary,
     paddingHorizontal: 20,
     justifyContent: 'center',
   },
   title: {
     fontFamily: 'Pretendard-Bold',
     fontSize: 20,
-    color: colors.text.inverse,
+    color: colors.text.primary,
     textAlign: 'center',
     marginBottom: 24,
   },
