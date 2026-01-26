@@ -8,22 +8,28 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_MARGIN = 20;
-const CARD_WIDTH = SCREEN_WIDTH - CARD_MARGIN * 2;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const CARD_HORIZONTAL_MARGIN = 30;
+const TOP_BAR_HEIGHT = 48;
+const PAGINATION_HEIGHT = 50;
 
 export default function LineupPlayerScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const route = useRoute();
-  const { lineup, initialIndex = 0 } = route.params;
+  const { lineup, initialIndex = 0, selectedTeam, game } = route.params;
 
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [isPlaying, setIsPlaying] = useState(false);
   const flatListRef = useRef(null);
+
+  const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
+  const cardHeight = SCREEN_HEIGHT - insets.top - TOP_BAR_HEIGHT - PAGINATION_HEIGHT - insets.bottom - 80;
 
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
@@ -32,71 +38,102 @@ export default function LineupPlayerScreen() {
   }).current;
 
   const renderCard = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.orderNumber}>{item.order}</Text>
-        <Text style={styles.position}>{item.position}</Text>
+    <View style={styles.cardWrapper}>
+      <View style={styles.cardShadow}>
+        <LinearGradient
+          colors={[teamColor, `${teamColor}E6`, `${teamColor}B3`]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.8, y: 1 }}
+          style={[styles.card, { height: cardHeight }]}
+        >
+          <View style={styles.decorCircleLarge} />
+          <View style={styles.decorCircleMedium} />
+          <View style={styles.decorCircleSmall} />
+
+          <View style={styles.cardHeader}>
+            <View style={styles.playerInfo}>
+              <Text style={styles.orderNumber}>{item.order}</Text>
+              <View style={styles.nameBlock}>
+                <Text style={styles.playerName}>{item.name}</Text>
+                <View style={styles.subtitleRow}>
+                  <View style={styles.subtitleDot} />
+                  <Text style={styles.subtitle}>기본 응원가</Text>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.playButton}
+              activeOpacity={0.8}
+              onPress={() => setIsPlaying(!isPlaying)}
+            >
+              <Ionicons
+                name={isPlaying ? 'pause' : 'play'}
+                size={20}
+                color="#fff"
+                style={isPlaying ? {} : { marginLeft: 2 }}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.lyricsContainer}>
+            <Text style={styles.lyrics}>{item.lyrics}</Text>
+          </View>
+        </LinearGradient>
       </View>
-
-      <Text style={styles.playerName}>{item.name}</Text>
-
-      <View style={styles.lyricsContainer}>
-        <Text style={styles.lyrics}>{item.lyrics}</Text>
-      </View>
-
-      <TouchableOpacity style={styles.playButton} activeOpacity={0.7}>
-        <Ionicons name="play-circle" size={64} color={colors.text.primary} />
-      </TouchableOpacity>
     </View>
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <LinearGradient
+      colors={[colors.background.primary, colors.background.primary, `${teamColor}30`, `${teamColor}50`]}
+      locations={[0, 0.5, 0.8, 1]}
+      style={[styles.container, { paddingTop: insets.top }]}
+    >
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={28} color={colors.text.primary} />
+          <Ionicons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>라인업</Text>
+        <View style={styles.topBarCenter}>
+          <Text style={styles.topBarDate}>{game?.date || ''}</Text>
+          <Text style={styles.topBarMatch}>{game?.home || ''} vs {game?.away || ''}</Text>
+        </View>
         <View style={styles.topBarSpacer} />
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={lineup}
-        renderItem={renderCard}
-        keyExtractor={(item) => String(item.order)}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={SCREEN_WIDTH}
-        decelerationRate="fast"
-        initialScrollIndex={initialIndex}
-        getItemLayout={(_, index) => ({
-          length: SCREEN_WIDTH,
-          offset: SCREEN_WIDTH * index,
-          index,
-        })}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-        contentContainerStyle={styles.listContent}
-      />
-
-      <View style={[styles.pagination, { paddingBottom: insets.bottom + 20 }]}>
-        {lineup.map((_, index) => (
-          <View
-            key={index}
-            style={[styles.dot, index === currentIndex && styles.dotActive]}
-          />
-        ))}
+      <View style={styles.cardSection}>
+        <FlatList
+          ref={flatListRef}
+          data={lineup}
+          renderItem={renderCard}
+          keyExtractor={(item) => String(item.order)}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          initialScrollIndex={initialIndex}
+          getItemLayout={(_, index) => ({
+            length: SCREEN_WIDTH,
+            offset: SCREEN_WIDTH * index,
+            index,
+          })}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+        />
+        <View style={styles.pagination}>
+          {lineup.map((_, index) => (
+            <View
+              key={index}
+              style={[styles.dot, index === currentIndex && styles.dotActive]}
+            />
+          ))}
+        </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
   },
   topBar: {
     flexDirection: 'row',
@@ -104,79 +141,151 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  topBarTitle: {
+  topBarCenter: {
     flex: 1,
+    alignItems: 'center',
+  },
+  topBarDate: {
+    fontFamily: 'Pretendard-Regular',
+    fontSize: 12,
+    color: colors.text.tertiary,
+  },
+  topBarMatch: {
     fontFamily: 'Pretendard-SemiBold',
-    fontSize: 16,
+    fontSize: 14,
     color: colors.text.primary,
-    textAlign: 'center',
+    marginTop: 2,
   },
   topBarSpacer: {
-    width: 28,
+    width: 24,
   },
-  listContent: {
-    alignItems: 'center',
+  cardSection: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  cardWrapper: {
+    width: SCREEN_WIDTH,
+    paddingHorizontal: CARD_HORIZONTAL_MARGIN,
+  },
+  cardShadow: {
+    borderRadius: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 15,
   },
   card: {
-    width: CARD_WIDTH,
-    marginHorizontal: CARD_MARGIN,
-    flex: 1,
-    backgroundColor: colors.background.tertiary,
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  decorCircleLarge: {
+    position: 'absolute',
+    top: -80,
+    right: -80,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  decorCircleMedium: {
+    position: 'absolute',
+    top: '35%',
+    right: -60,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  decorCircleSmall: {
+    position: 'absolute',
+    bottom: -30,
+    left: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  playerInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
   },
   orderNumber: {
     fontFamily: 'RobotoCondensed-Black',
-    fontSize: 20,
-    color: colors.text.tertiary,
+    fontSize: 52,
+    color: 'rgba(255,255,255,0.9)',
+    lineHeight: 52,
   },
-  position: {
-    fontFamily: 'Pretendard-Medium',
-    fontSize: 14,
-    color: colors.text.secondary,
+  nameBlock: {
+    paddingTop: 6,
   },
   playerName: {
     fontFamily: 'Pretendard-Bold',
-    fontSize: 28,
-    color: colors.text.primary,
-    marginBottom: 24,
+    fontSize: 24,
+    color: colors.text.inverse,
+    letterSpacing: -0.3,
+  },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 6,
+  },
+  subtitleDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  subtitle: {
+    fontFamily: 'Pretendard-Medium',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  playButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   lyricsContainer: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
+    justifyContent: 'flex-end',
+    paddingBottom: 12,
   },
   lyrics: {
-    fontFamily: 'Pretendard-Regular',
-    fontSize: 16,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  playButton: {
-    marginTop: 24,
+    fontFamily: 'Pretendard-Bold',
+    fontSize: 26,
+    color: colors.text.inverse,
+    lineHeight: 44,
+    letterSpacing: -0.3,
   },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 6,
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 20,
+    marginBottom: 12,
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.grayscale.gray200,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.grayscale.gray300,
   },
   dotActive: {
     backgroundColor: colors.text.primary,
-    width: 18,
+    width: 24,
   },
 });

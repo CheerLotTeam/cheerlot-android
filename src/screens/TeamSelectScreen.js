@@ -7,25 +7,19 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../constants/colors';
+import { useTeam, TEAMS } from '../contexts/TeamContext';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_GAP = 8;
+const HORIZONTAL_PADDING = 20;
+const CARD_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - CARD_GAP) / 2;
 
-const TEAMS = [
-  { id: 'kia', name: 'KIA 타이거즈' },
-  { id: 'samsung', name: '삼성 라이온즈' },
-  { id: 'lg', name: 'LG 트윈스' },
-  { id: 'doosan', name: '두산 베어스' },
-  { id: 'kt', name: 'KT 위즈' },
-  { id: 'ssg', name: 'SSG 랜더스' },
-  { id: 'nc', name: 'NC 다이노스' },
-  { id: 'hanwha', name: '한화 이글스' },
-  { id: 'lotte', name: '롯데 자이언츠' },
-  { id: 'kiwoom', name: '키움 히어로즈' },
-];
-
-export default function TeamSelectScreen({ onTeamSelect }) {
+export default function TeamSelectScreen() {
+  const insets = useSafeAreaInsets();
+  const { selectTeam, selectedTeam, closeTeamSelect } = useTeam();
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   useEffect(() => {
@@ -37,14 +31,23 @@ export default function TeamSelectScreen({ onTeamSelect }) {
     }).start();
   }, []);
 
-  const handleSelect = async (teamId) => {
-    await AsyncStorage.setItem('selectedTeam', teamId);
+  const handleSelect = (teamId) => {
     Animated.timing(translateY, {
       toValue: SCREEN_HEIGHT,
       duration: 250,
       useNativeDriver: true,
     }).start(() => {
-      onTeamSelect(teamId);
+      selectTeam(teamId);
+    });
+  };
+
+  const handleClose = () => {
+    Animated.timing(translateY, {
+      toValue: SCREEN_HEIGHT,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      closeTeamSelect();
     });
   };
 
@@ -53,21 +56,44 @@ export default function TeamSelectScreen({ onTeamSelect }) {
       <Animated.View
         style={[styles.modal, { transform: [{ translateY }] }]}
       >
-        <Text style={styles.title}>응원 팀을 선택하세요</Text>
-        <View style={styles.grid}>
-          {TEAMS.map((team) => {
-            const teamColor = colors.team[team.id].primary;
-            return (
-              <TouchableOpacity
-                key={team.id}
-                style={[styles.card, { backgroundColor: teamColor }]}
-                activeOpacity={0.8}
-                onPress={() => handleSelect(team.id)}
-              >
-                <Text style={styles.teamName}>{team.name}</Text>
-              </TouchableOpacity>
-            );
-          })}
+        <View style={[styles.content, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 16 }]}>
+          <Text style={styles.title}>응원 팀을 선택하세요</Text>
+
+          <View style={styles.grid}>
+            {TEAMS.map((team) => {
+              const teamColor = colors.team[team.id].primary;
+              return (
+                <View key={team.id} style={styles.cardOuter}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => handleSelect(team.id)}
+                  >
+                    <LinearGradient
+                      colors={[teamColor, teamColor]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={styles.card}
+                    >
+                      <LinearGradient
+                        colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={styles.cardShine}
+                      />
+                      <Text style={styles.teamNameEn}>{team.nameEn.replace(' ', '\n')}</Text>
+                      <Text style={styles.teamNameKo}>{team.nameKo}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </View>
+
+          {selectedTeam && (
+            <TouchableOpacity style={styles.cancelButton} onPress={handleClose} activeOpacity={0.7}>
+              <Text style={styles.cancelText}>취소</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </Animated.View>
     </View>
@@ -82,32 +108,76 @@ const styles = StyleSheet.create({
   modal: {
     flex: 1,
     backgroundColor: colors.background.primary,
-    paddingHorizontal: 20,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: HORIZONTAL_PADDING,
     justifyContent: 'center',
   },
   title: {
     fontFamily: 'Pretendard-Bold',
-    fontSize: 20,
+    fontSize: 18,
     color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'center',
+    gap: CARD_GAP,
+  },
+  cardOuter: {
+    width: CARD_WIDTH,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
   card: {
-    width: '47%',
-    paddingVertical: 18,
+    width: '100%',
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
-  teamName: {
-    fontFamily: 'Pretendard-Bold',
-    fontSize: 14,
+  cardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 50,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+  },
+  teamNameEn: {
+    fontFamily: 'RobotoCondensed-Black',
+    fontSize: 18,
     color: colors.text.inverse,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 6,
+  },
+  teamNameKo: {
+    fontFamily: 'Pretendard-Medium',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+  },
+  cancelButton: {
+    marginTop: 20,
+    alignSelf: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+  },
+  cancelText: {
+    fontFamily: 'Pretendard-Medium',
+    fontSize: 15,
+    color: colors.text.secondary,
   },
 });

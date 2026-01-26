@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -11,6 +11,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSearch } from '../contexts/SearchContext';
 
 const TAB_ICONS = {
   Lineup: { active: 'list', inactive: 'list-outline' },
@@ -34,18 +35,24 @@ const WRAPPER_HORIZONTAL_PADDING = 20;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ROW_WIDTH = SCREEN_WIDTH - WRAPPER_HORIZONTAL_PADDING * 2;
 
-export default function LiquidGlassTabBar({ state, navigation, searchQuery, onSearchChange }) {
+export default function LiquidGlassTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
+  const {
+    searchQuery,
+    setSearchQuery,
+    isSearching,
+    openSearch: contextOpenSearch,
+    closeSearch: contextCloseSearch,
+  } = useSearch();
   const tabCount = state.routes.length;
   const tabsContainerWidth = TAB_WIDTH * tabCount;
   const indicatorWidth = TAB_WIDTH - INDICATOR_HORIZONTAL_MARGIN * 2;
   const expandedSearchWidth = ROW_WIDTH - COLLAPSED_TAB_WIDTH - BAR_GAP;
 
-  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef(null);
 
   const translateX = useRef(new Animated.Value(0)).current;
-  const searchAnim = useRef(new Animated.Value(0)).current;
+  const searchAnim = useRef(new Animated.Value(isSearching ? 1 : 0)).current;
 
   useEffect(() => {
     Animated.spring(translateX, {
@@ -56,30 +63,27 @@ export default function LiquidGlassTabBar({ state, navigation, searchQuery, onSe
     }).start();
   }, [state.index]);
 
-  const openSearch = () => {
-    setIsSearching(true);
-    navigation.navigate('AllPlayers');
+  useEffect(() => {
     Animated.spring(searchAnim, {
-      toValue: 1,
+      toValue: isSearching ? 1 : 0,
       useNativeDriver: false,
       tension: 68,
       friction: 12,
     }).start(() => {
-      inputRef.current?.focus();
+      if (isSearching) {
+        inputRef.current?.focus();
+      }
     });
+  }, [isSearching]);
+
+  const openSearch = () => {
+    contextOpenSearch();
+    navigation.navigate('AllPlayers');
   };
 
   const closeSearch = () => {
     inputRef.current?.blur();
-    onSearchChange('');
-    Animated.spring(searchAnim, {
-      toValue: 0,
-      useNativeDriver: false,
-      tension: 68,
-      friction: 12,
-    }).start(() => {
-      setIsSearching(false);
-    });
+    contextCloseSearch();
   };
 
   const tabsAnimatedWidth = searchAnim.interpolate({
@@ -227,7 +231,7 @@ export default function LiquidGlassTabBar({ state, navigation, searchQuery, onSe
                   placeholder="선수 검색"
                   placeholderTextColor="rgba(0,0,0,0.35)"
                   value={searchQuery}
-                  onChangeText={onSearchChange}
+                  onChangeText={setSearchQuery}
                   autoCorrect={false}
                 />
                 <TouchableOpacity onPress={closeSearch} activeOpacity={0.7}>

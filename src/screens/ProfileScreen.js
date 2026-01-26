@@ -1,8 +1,11 @@
+import { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
+import { useTeam } from '../contexts/TeamContext';
 
 const SECTIONS = [
   {
@@ -21,9 +24,9 @@ const SECTIONS = [
   {
     title: '서비스 약관',
     items: [
-      { label: '이용약관', icon: 'document-text-outline' },
-      { label: '개인정보처리방침', icon: 'shield-outline' },
-      { label: '저작권 법적고지', icon: 'alert-circle-outline' },
+      { label: '이용약관', icon: 'document-text-outline', screen: 'Terms' },
+      { label: '개인정보처리방침', icon: 'shield-outline', screen: 'Privacy' },
+      { label: '저작권 법적고지', icon: 'alert-circle-outline', screen: 'Copyright' },
     ],
   },
 ];
@@ -31,6 +34,22 @@ const SECTIONS = [
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { selectedTeam, teamInfo, openTeamSelect } = useTeam();
+  const isChangingTeam = useRef(false);
+
+  const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
+
+  useEffect(() => {
+    if (isChangingTeam.current) {
+      isChangingTeam.current = false;
+      navigation.goBack();
+    }
+  }, [selectedTeam]);
+
+  const handleChangeTeam = () => {
+    isChangingTeam.current = true;
+    openTeamSelect();
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -48,10 +67,28 @@ export default function ProfileScreen() {
       >
         {/* 나의 팀 */}
         <Text style={styles.sectionTitle}>나의 팀</Text>
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.row} activeOpacity={0.7}>
-            <Text style={styles.teamLabel}>KIA 타이거즈</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
+        <View style={styles.teamCardOuter}>
+          <TouchableOpacity activeOpacity={0.9} onPress={handleChangeTeam}>
+            <LinearGradient
+              colors={[teamColor, `${teamColor}CC`]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.teamCard}
+            >
+              <LinearGradient
+                colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.teamCardShine}
+              />
+              <View style={styles.teamCardContent}>
+                <Text style={styles.teamName}>{teamInfo?.nameEn || ''}</Text>
+                <Text style={styles.teamSlogan}>{teamInfo?.slogan || ''}</Text>
+              </View>
+              <TouchableOpacity style={styles.moreButton} onPress={handleChangeTeam} activeOpacity={0.7}>
+                <Ionicons name="ellipsis-horizontal" size={20} color="rgba(255,255,255,0.8)" />
+              </TouchableOpacity>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -68,11 +105,9 @@ export default function ProfileScreen() {
                     index < section.items.length - 1 && styles.rowBorder,
                   ]}
                   activeOpacity={0.7}
+                  onPress={() => item.screen && navigation.navigate(item.screen)}
                 >
-                  <View style={styles.rowLeft}>
-                    <Ionicons name={item.icon} size={20} color={colors.text.secondary} />
-                    <Text style={styles.rowLabel}>{item.label}</Text>
-                  </View>
+                  <Text style={styles.rowLabel}>{item.label}</Text>
                   <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
                 </TouchableOpacity>
               ))}
@@ -117,6 +152,56 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginLeft: 4,
   },
+  teamCardOuter: {
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.35,
+    shadowRadius: 32,
+    elevation: 16,
+  },
+  teamCard: {
+    borderRadius: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  teamCardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  teamCardContent: {
+    alignItems: 'center',
+  },
+  teamName: {
+    fontFamily: 'RobotoCondensed-Black',
+    fontSize: 26,
+    color: colors.text.inverse,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  teamSlogan: {
+    fontFamily: 'Pretendard-Medium',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+  },
+  moreButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   section: {
     backgroundColor: colors.background.tertiary,
     borderRadius: 12,
@@ -133,18 +218,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border.default,
   },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   rowLabel: {
     fontFamily: 'Pretendard-Regular',
-    fontSize: 15,
-    color: colors.text.primary,
-  },
-  teamLabel: {
-    fontFamily: 'Pretendard-SemiBold',
     fontSize: 15,
     color: colors.text.primary,
   },

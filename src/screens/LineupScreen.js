@@ -1,17 +1,31 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 
+const TEAM_NAMES = {
+  doosan: 'DOOSAN BEARS',
+  hanwha: 'HANWHA EAGLES',
+  kia: 'KIA TIGERS',
+  kiwoom: 'KIWOOM HEROES',
+  kt: 'KT WIZ',
+  lg: 'LG TWINS',
+  lotte: 'LOTTE GIANTS',
+  nc: 'NC DINOS',
+  samsung: 'SAMSUNG LIONS',
+  ssg: 'SSG LANDERS',
+};
+
 // TODO: 실제 데이터 연동 시 교체
 const MOCK_GAME = {
-  date: '2025.01.23 (목)',
-  opponent: 'LG 트윈스',
-  startingPitcher: {
-    name: '양현종',
-    throws: '좌투',
-  },
+  date: '1월 23일',
+  home: 'KIA',
+  away: 'LG',
+  startingPitcher: '양현종',
 };
 
 const MOCK_LINEUP = [
@@ -26,9 +40,80 @@ const MOCK_LINEUP = [
   { order: 9, name: '박정우', position: '3루수', bats: '우타', lyrics: '박정우 박정우\n힘내라 박정우\n뜨거운 함성과\n함께 달려가자' },
 ];
 
-export default function LineupScreen() {
+const SWIPE_THRESHOLD = -60;
+
+function SwipeablePlayerRow({ player, onPress, onSubstitute }) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const isOpen = useRef(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dx < 0) {
+          translateX.setValue(Math.max(gestureState.dx, -80));
+        } else if (isOpen.current) {
+          translateX.setValue(Math.min(gestureState.dx - 80, 0));
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < SWIPE_THRESHOLD) {
+          Animated.spring(translateX, { toValue: -72, useNativeDriver: true, tension: 100, friction: 12 }).start();
+          isOpen.current = true;
+        } else {
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true, tension: 100, friction: 12 }).start();
+          isOpen.current = false;
+        }
+      },
+    })
+  ).current;
+
+  const close = useCallback(() => {
+    Animated.spring(translateX, { toValue: 0, useNativeDriver: true, tension: 100, friction: 12 }).start();
+    isOpen.current = false;
+  }, []);
+
+  return (
+    <View style={styles.swipeContainer}>
+      <Animated.View
+        style={{ flexDirection: 'row', transform: [{ translateX }] }}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity
+          style={styles.playerRow}
+          activeOpacity={0.7}
+          onPress={onPress}
+        >
+          <Text style={styles.orderNumber}>{player.order}</Text>
+          <Text style={styles.playerName}>{player.name}</Text>
+          <Text style={styles.playerDetail}>{player.position}, {player.bats}</Text>
+          <Ionicons name="play" size={14} color="rgba(255,255,255,0.8)" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.substituteButton}
+          activeOpacity={0.7}
+          onPress={() => {
+            close();
+            onSubstitute(player);
+          }}
+        >
+          <View style={styles.substituteInner}>
+            <Ionicons name="swap-horizontal" size={18} color="#FFFFFF" />
+            <Text style={styles.substituteText}>교체</Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+}
+
+export default function LineupScreen({ selectedTeam }) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+
+  const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
+  const teamName = TEAM_NAMES[selectedTeam] || '';
 
   return (
     <View style={styles.container}>
@@ -40,56 +125,67 @@ export default function LineupScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
+          <Text style={styles.headerTitle}>선발 라인업</Text>
           <TouchableOpacity
+            style={styles.profileButton}
             onPress={() => navigation.navigate('Profile')}
             activeOpacity={0.7}
           >
-            <Ionicons name="person-circle-outline" size={28} color={colors.text.primary} />
+            <BlurView intensity={50} tint="light" style={styles.profileBlur}>
+              <View style={styles.profileGlass} />
+              <Ionicons name="person" size={16} color={colors.text.primary} />
+            </BlurView>
           </TouchableOpacity>
         </View>
 
-        {/* 경기 정보 */}
-        <View style={styles.gameInfo}>
-          <Text style={styles.date}>{MOCK_GAME.date}</Text>
-          <Text style={styles.opponent}>vs {MOCK_GAME.opponent}</Text>
-        </View>
+        <View style={styles.cardOuter}>
+          {/* 입체감을 위한 외곽 그림자 레이어 */}
+          <LinearGradient
+            colors={[`${teamColor}`, `${teamColor}CC`]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.card}
+          >
+            {/* 상단 하이라이트 (빛 반사 효과) */}
+            <LinearGradient
+              colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.cardShine}
+            />
 
-        {/* 선발 투수 */}
-        <View style={styles.pitcherCard}>
-          <Text style={styles.pitcherLabel}>선발투수</Text>
-          <View style={styles.pitcherInfo}>
-            <Text style={styles.pitcherName}>{MOCK_GAME.startingPitcher.name}</Text>
-            <Text style={styles.pitcherThrows}>{MOCK_GAME.startingPitcher.throws}</Text>
-          </View>
-        </View>
+            <Text style={styles.teamName}>{teamName}</Text>
 
-        {/* 타순 리스트 */}
-        <View style={styles.lineupList}>
-          {MOCK_LINEUP.map((player) => (
-            <View key={player.order} style={styles.playerRow}>
-              <View style={styles.orderBadge}>
-                <Text style={styles.orderText}>{player.order}</Text>
-              </View>
-              <View style={styles.playerInfo}>
-                <Text style={styles.playerName}>{player.name}</Text>
-                <Text style={styles.playerDetail}>
-                  {player.position} · {player.bats}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.playButton}
-                activeOpacity={0.7}
+            <View style={styles.gameBadge}>
+              <Ionicons name="calendar-outline" size={13} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.gameBadgeText}>
+                {MOCK_GAME.date} | {MOCK_GAME.home} vs {MOCK_GAME.away}
+              </Text>
+              <View style={styles.gameBadgeDivider} />
+              <Ionicons name="baseball-outline" size={13} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.gameBadgeText}>{MOCK_GAME.startingPitcher}</Text>
+            </View>
+
+            <View style={styles.lineupList}>
+            {MOCK_LINEUP.map((player) => (
+              <SwipeablePlayerRow
+                key={player.order}
+                player={player}
                 onPress={() => {
                   navigation.navigate('LineupPlayer', {
                     lineup: MOCK_LINEUP,
                     initialIndex: player.order - 1,
+                    selectedTeam,
+                    game: MOCK_GAME,
                   });
                 }}
-              >
-                <Ionicons name="play-circle" size={32} color={colors.grayscale.gray400} />
-              </TouchableOpacity>
+                onSubstitute={(p) => {
+                  navigation.navigate('Substitute', { player: p });
+                }}
+              />
+            ))}
             </View>
-          ))}
+          </LinearGradient>
         </View>
       </ScrollView>
     </View>
@@ -106,94 +202,156 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 12,
-  },
-  gameInfo: {
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
-  date: {
-    fontFamily: 'Pretendard-Medium',
-    fontSize: 14,
-    color: colors.text.tertiary,
-    marginBottom: 4,
-  },
-  opponent: {
+  headerTitle: {
     fontFamily: 'Pretendard-Bold',
-    fontSize: 20,
+    fontSize: 24,
     color: colors.text.primary,
   },
-  pitcherCard: {
+  profileButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  profileBlur: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileGlass: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderRadius: 20,
+  },
+  cardOuter: {
+    borderRadius: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.35,
+    shadowRadius: 32,
+    elevation: 16,
+  },
+  card: {
+    borderRadius: 24,
+    paddingTop: 28,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  cardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  teamName: {
+    fontFamily: 'RobotoCondensed-Black',
+    fontSize: 34,
+    color: colors.text.inverse,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  gameBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background.tertiary,
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    paddingVertical: 10,
     paddingHorizontal: 16,
+    gap: 6,
     marginBottom: 24,
   },
-  pitcherLabel: {
-    fontFamily: 'Pretendard-Medium',
-    fontSize: 13,
-    color: colors.text.tertiary,
-    marginRight: 12,
-  },
-  pitcherInfo: {
-    flexDirection: 'row',
+  gameBadgeIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
-  pitcherName: {
-    fontFamily: 'Pretendard-Bold',
-    fontSize: 16,
-    color: colors.text.primary,
+  gameBadgeDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    marginHorizontal: 4,
   },
-  pitcherThrows: {
-    fontFamily: 'Pretendard-Regular',
-    fontSize: 13,
-    color: colors.text.secondary,
+  gameBadgeText: {
+    fontFamily: 'Pretendard-Medium',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
   },
   lineupList: {
-    gap: 8,
+    width: '100%',
+  },
+  swipeContainer: {
+    overflow: 'hidden',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  substituteButton: {
+    width: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: 8,
+  },
+  substituteInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 2,
+  },
+  substituteText: {
+    fontFamily: 'Pretendard-Medium',
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.9)',
   },
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background.tertiary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 16,
+    width: '100%',
+    gap: 12,
   },
-  orderBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.grayscale.gray200,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  orderText: {
-    fontFamily: 'RobotoCondensed-Black',
-    fontSize: 14,
-    color: colors.text.primary,
-  },
-  playerInfo: {
-    flex: 1,
+  orderNumber: {
+    fontFamily: 'Pretendard-Bold',
+    fontSize: 20,
+    color: '#FFFFFF',
+    width: 24,
   },
   playerName: {
-    fontFamily: 'Pretendard-SemiBold',
-    fontSize: 16,
-    color: colors.text.primary,
-    marginBottom: 2,
+    fontFamily: 'Pretendard-Bold',
+    fontSize: 18,
+    color: colors.text.inverse,
   },
   playerDetail: {
+    flex: 1,
     fontFamily: 'Pretendard-Regular',
     fontSize: 13,
-    color: colors.text.secondary,
-  },
-  playButton: {
-    padding: 4,
+    color: 'rgba(255,255,255,0.5)',
+    marginLeft: 8,
   },
 });
