@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,14 +11,14 @@ const SECTIONS = [
   {
     title: '쳐랏팀',
     items: [
-      { label: '쳐랏 인스타그램', icon: 'logo-instagram' },
-      { label: '개발자 응원하기', icon: 'heart-outline' },
+      { label: '쳐랏 인스타그램', icon: 'logo-instagram', url: 'https://www.instagram.com/cheer.lot/' },
+      { label: '개발자 응원하기', icon: 'heart-outline', url: 'market://details?id=com.gms.cheerlotandroid' },
     ],
   },
   {
     title: '쳐랏 소개',
     items: [
-      { label: '대표 페이지', icon: 'globe-outline' },
+      { label: '대표 페이지', icon: 'globe-outline', url: 'https://thrilling-chatter-055.notion.site/cheerlot' },
     ],
   },
   {
@@ -105,7 +105,10 @@ export default function ProfileScreen() {
                     index < section.items.length - 1 && styles.rowBorder,
                   ]}
                   activeOpacity={0.7}
-                  onPress={() => item.screen && navigation.navigate(item.screen)}
+                  onPress={() => {
+                    if (item.screen) navigation.navigate(item.screen);
+                    if (item.url) Linking.openURL(item.url);
+                  }}
                 >
                   <Text style={styles.rowLabel}>{item.label}</Text>
                   <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />

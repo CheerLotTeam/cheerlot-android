@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.cheerlotandroid"
+      "bundleIdentifier": "com.gms.cheerlotandroid"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.cheerlotandroid"
+      "package": "com.gms.cheerlotandroid"
     },
     "web": {
       "favicon": "./assets/favicon.png"
