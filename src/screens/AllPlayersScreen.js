@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useSearch } from '../contexts/SearchContext';
+import { useTeamPlayers } from '../hooks/useTeamPlayers';
 
 const TEAM_INFO = {
   doosan: { name: 'DOOSAN BEARS', slogan: 'WE ARE THE BEARS' },
@@ -20,34 +21,44 @@ const TEAM_INFO = {
   ssg: { name: 'SSG LANDERS', slogan: 'LANDING ON TOP' },
 };
 
-// TODO: 실제 데이터 연동 시 교체
-const MOCK_PLAYERS = [
-  { id: 1, name: '양현종', number: 54, lyrics: '양현종 양현종\n에이스 양현종\n불꽃같은 직구로\n타자를 제압해' },
-  { id: 2, name: '김도영', number: 5, lyrics: '김도영 김도영\n빛나는 김도영\n화려한 플레이로\n팬들을 열광시켜' },
-  { id: 3, name: '나성범', number: 47, lyrics: '나성범 나성범\n강타자 나성범\n펜스를 넘겨라\n홈런을 날려라' },
-  { id: 4, name: '최형우', number: 34, lyrics: '최형우 최형우\n전설의 최형우\n방망이를 휘둘러\n승리를 가져와' },
-  { id: 5, name: '소크라테스', number: 30, lyrics: '소크라테스\n우리의 소크라테스\n강력한 한방으로\n경기를 뒤집어라' },
-  { id: 6, name: '김선빈', number: 3, lyrics: '김선빈 김선빈\n안타왕 김선빈\n정확한 타격으로\n출루를 책임져' },
-  { id: 7, name: '박찬호', number: 24, lyrics: '박찬호 박찬호\n우리의 박찬호\n오늘도 힘차게\n달려라 박찬호' },
-  { id: 8, name: '최원준', number: 53, lyrics: '최원준 최원준\n날아라 최원준\n빠른 발 재빈 손\n수비의 달인' },
-  { id: 9, name: '김태군', number: 22, lyrics: '김태군 김태군\n철벽의 김태군\n포수의 자리를\n굳건히 지켜라' },
-  { id: 10, name: '박정우', number: 25, lyrics: '박정우 박정우\n힘내라 박정우\n뜨거운 함성과\n함께 달려가자' },
-  { id: 11, name: '이의리', number: 29, lyrics: '이의리 이의리\n강속구 이의리\n마운드를 지켜라\n삼진을 잡아라' },
-  { id: 12, name: '정해영', number: 19, lyrics: '정해영 정해영\n마무리 정해영\n마지막 아웃을\n책임지는 사나이' },
-  { id: 13, name: '네일', number: 43, lyrics: '네일 네일\n파워풀 네일\n강력한 투구로\n승리를 이끌어라' },
-  { id: 14, name: '이창진', number: 61, lyrics: '이창진 이창진\n젊은 이창진\n미래의 에이스로\n성장하는 투수' },
-  { id: 15, name: '한승택', number: 37, lyrics: '한승택 한승택\n든든한 한승택\n묵묵히 맡은 바\n최선을 다해라' },
-];
-
 export default function AllPlayersScreen({ selectedTeam }) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { searchQuery } = useSearch();
 
+  const { data: playersData, loading, error } = useTeamPlayers(selectedTeam);
+
   const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
   const teamInfo = TEAM_INFO[selectedTeam] || { name: '', slogan: '' };
 
-  const sortedPlayers = [...MOCK_PLAYERS].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={teamColor} />
+        <Text style={styles.loadingText}>선수 목록을 불러오는 중...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Ionicons name="alert-circle-outline" size={48} color={colors.text.tertiary} />
+        <Text style={styles.errorText}>데이터를 불러올 수 없습니다</Text>
+      </View>
+    );
+  }
+
+  const players = playersData?.players?.map((player) => ({
+    id: player.playerCode,
+    name: player.name,
+    number: player.backNumber,
+    lyrics: player.cheerSongs?.[0]?.lyrics || '',
+    playerCode: player.playerCode,
+    cheerSongs: player.cheerSongs,
+  })) || [];
+
+  const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
   const filteredPlayers = sortedPlayers.filter((player) => {
     if (!searchQuery) return true;
@@ -59,6 +70,7 @@ export default function AllPlayersScreen({ selectedTeam }) {
   });
 
   const handlePlayAll = () => {
+    if (filteredPlayers.length === 0) return;
     navigation.navigate('CheerPlayer', {
       player: filteredPlayers[0],
       players: filteredPlayers,
@@ -148,6 +160,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.primary,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontFamily: 'Pretendard-Medium',
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  errorText: {
+    marginTop: 12,
+    fontFamily: 'Pretendard-Medium',
+    fontSize: 14,
+    color: colors.text.tertiary,
   },
   scrollContent: {
     paddingHorizontal: 20,
