@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Audio } from 'expo-av';
 import { colors } from '../constants/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const formatTime = (millis) => {
+  if (!millis || millis < 0) return '0:00';
+  const totalSeconds = Math.floor(millis / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
 
 export default function CheerPlayerScreen() {
   const insets = useSafeAreaInsets();
@@ -23,20 +32,92 @@ export default function CheerPlayerScreen() {
 
   const [playerIndex, setPlayerIndex] = useState(currentIndex);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress] = useState(0.33);
+  const [progress, setProgress] = useState(0);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const soundRef = useRef(null);
 
   const currentPlayer = players.length > 0 ? players[playerIndex] : player;
   const hasPrevious = players.length > 0 && playerIndex > 0;
   const hasNext = players.length > 0 && playerIndex < players.length - 1;
 
-  const handlePrevious = () => {
+  const audioUrl = currentPlayer?.cheerSongs?.[0]?.audioUrl || null;
+
+  const onPlaybackStatusUpdate = useCallback((status) => {
+    if (status.isLoaded) {
+      setPosition(status.positionMillis || 0);
+      setDuration(status.durationMillis || 0);
+      setProgress(status.durationMillis ? status.positionMillis / status.durationMillis : 0);
+      setIsPlaying(status.isPlaying);
+
+      if (status.didJustFinish && hasNext) {
+        setPlayerIndex((prev) => prev + 1);
+      }
+    }
+  }, [hasNext]);
+
+  const loadAudio = useCallback(async () => {
+    if (soundRef.current) {
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+
+    if (!audioUrl) return;
+
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUrl },
+        { shouldPlay: false },
+        onPlaybackStatusUpdate
+      );
+      soundRef.current = sound;
+    } catch (err) {
+      console.error('Audio load error:', err);
+    }
+  }, [audioUrl, onPlaybackStatusUpdate]);
+
+  useEffect(() => {
+    Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+    });
+
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    loadAudio();
+  }, [loadAudio]);
+
+  const handlePlayPause = async () => {
+    if (!soundRef.current) return;
+
+    if (isPlaying) {
+      await soundRef.current.pauseAsync();
+    } else {
+      await soundRef.current.playAsync();
+    }
+  };
+
+  const handlePrevious = async () => {
     if (hasPrevious) {
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+      }
       setPlayerIndex(playerIndex - 1);
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (hasNext) {
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+      }
       setPlayerIndex(playerIndex + 1);
     }
   };
@@ -46,17 +127,17 @@ export default function CheerPlayerScreen() {
   const anim3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const createLoop = (animValue, duration) => {
+    const createLoop = (animValue, dur) => {
       return Animated.loop(
         Animated.sequence([
           Animated.timing(animValue, {
             toValue: 1,
-            duration,
+            duration: dur,
             useNativeDriver: true,
           }),
           Animated.timing(animValue, {
             toValue: 0,
-            duration,
+            duration: dur,
             useNativeDriver: true,
           }),
         ])
@@ -98,9 +179,6 @@ export default function CheerPlayerScreen() {
     ],
   };
 
-  const currentTime = '0:30';
-  const totalTime = '01:30';
-
   return (
     <LinearGradient
       colors={[teamColor, `${teamColor}E6`, `${teamColor}CC`]}
@@ -132,7 +210,9 @@ export default function CheerPlayerScreen() {
 
       <View style={styles.playerInfo}>
         <Text style={styles.playerName}>{currentPlayer?.name}</Text>
-        <Text style={styles.subtitle}>기본 응원가</Text>
+        <Text style={styles.subtitle}>
+          {currentPlayer?.cheerSongs?.[0]?.title || '응원가'}
+        </Text>
       </View>
 
       <View style={styles.lyricsContainer}>
@@ -146,8 +226,8 @@ export default function CheerPlayerScreen() {
             <View style={[styles.progressThumb, { left: `${progress * 100}%` }]} />
           </View>
           <View style={styles.timeRow}>
-            <Text style={styles.timeText}>{currentTime}</Text>
-            <Text style={styles.timeText}>{totalTime}</Text>
+            <Text style={styles.timeText}>{formatTime(position)}</Text>
+            <Text style={styles.timeText}>{formatTime(duration)}</Text>
           </View>
         </View>
 
@@ -163,7 +243,7 @@ export default function CheerPlayerScreen() {
           <TouchableOpacity
             style={styles.playButton}
             activeOpacity={0.8}
-            onPress={() => setIsPlaying(!isPlaying)}
+            onPress={handlePlayPause}
           >
             <Ionicons
               name={isPlaying ? 'pause' : 'play'}
