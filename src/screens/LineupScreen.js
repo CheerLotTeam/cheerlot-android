@@ -1,79 +1,66 @@
-import { useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, PanResponder, ActivityIndicator } from 'react-native';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { colors } from '../constants/colors';
 import { useStarterLineup } from '../hooks/useStarterLineup';
 import { useTeamInfo } from '../hooks/useTeamInfo';
 
 const TEAM_NAMES = {
-  doosan: 'DOOSAN BEARS',
-  hanwha: 'HANWHA EAGLES',
-  kia: 'KIA TIGERS',
-  kiwoom: 'KIWOOM HEROES',
+  ob: 'DOOSAN BEARS',
+  hh: 'HANWHA EAGLES',
+  ht: 'KIA TIGERS',
+  wo: 'KIWOOM HEROES',
   kt: 'KT WIZ',
   lg: 'LG TWINS',
-  lotte: 'LOTTE GIANTS',
+  lt: 'LOTTE GIANTS',
   nc: 'NC DINOS',
-  samsung: 'SAMSUNG LIONS',
-  ssg: 'SSG LANDERS',
+  ss: 'SAMSUNG LIONS',
+  sk: 'SSG LANDERS',
 };
 
-const SWIPE_THRESHOLD = -60;
+const SWIPE_OPEN = -72;
 
 function SwipeablePlayerRow({ player, onPress, onSubstitute }) {
   const translateX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef(false);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dx < 0) {
-          translateX.setValue(Math.max(gestureState.dx, -80));
-        } else if (isOpen.current) {
-          translateX.setValue(Math.min(gestureState.dx - 80, 0));
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx < SWIPE_THRESHOLD) {
-          Animated.spring(translateX, { toValue: -72, useNativeDriver: true, tension: 100, friction: 12 }).start();
-          isOpen.current = true;
-        } else {
-          Animated.spring(translateX, { toValue: 0, useNativeDriver: true, tension: 100, friction: 12 }).start();
-          isOpen.current = false;
-        }
-      },
-    })
-  ).current;
+  const buttonOpacity = translateX.interpolate({
+    inputRange: [SWIPE_OPEN, 0],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
 
-  const close = useCallback(() => {
-    Animated.spring(translateX, { toValue: 0, useNativeDriver: true, tension: 100, friction: 12 }).start();
-    isOpen.current = false;
-  }, []);
+  const snapTo = (toValue) => {
+    Animated.timing(translateX, {
+      toValue,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+    isOpen.current = toValue !== 0;
+  };
+
+  const close = useCallback(() => snapTo(0), []);
+
+  const onGestureEvent = ({ nativeEvent }) => {
+    if (nativeEvent.state === State.END) {
+      const { translationX } = nativeEvent;
+      if (!isOpen.current && translationX < -20) {
+        snapTo(SWIPE_OPEN);
+      } else if (isOpen.current && translationX > 20) {
+        snapTo(0);
+      }
+    }
+  };
 
   return (
     <View style={styles.swipeContainer}>
-      <Animated.View
-        style={{ flexDirection: 'row', transform: [{ translateX }] }}
-        {...panResponder.panHandlers}
-      >
+      <Animated.View style={[styles.substituteButton, { opacity: buttonOpacity }]}>
         <TouchableOpacity
-          style={styles.playerRow}
-          activeOpacity={0.7}
-          onPress={onPress}
-        >
-          <Text style={styles.orderNumber}>{player.order}</Text>
-          <Text style={styles.playerName}>{player.name}</Text>
-          <Text style={styles.playerDetail}>{player.position}, {player.bats}</Text>
-          <Ionicons name="play" size={14} color="rgba(255,255,255,0.8)" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.substituteButton}
           activeOpacity={0.7}
           onPress={() => {
             close();
@@ -86,6 +73,29 @@ function SwipeablePlayerRow({ player, onPress, onSubstitute }) {
           </View>
         </TouchableOpacity>
       </Animated.View>
+
+      <PanGestureHandler
+        activeOffsetX={[-15, 15]}
+        failOffsetY={[-10, 10]}
+        onHandlerStateChange={onGestureEvent}
+      >
+        <Animated.View style={{ transform: [{ translateX }] }}>
+          <TouchableOpacity
+            style={styles.playerRow}
+            activeOpacity={0.7}
+            onPress={isOpen.current ? close : onPress}
+          >
+            <Text style={styles.orderNumber}>{player.order}</Text>
+            <Text style={styles.playerName}>{player.name}</Text>
+            <Text style={styles.playerDetail}>{player.position}, {player.bats}</Text>
+            <Ionicons
+              name="play"
+              size={14}
+              color={player.cheerSongs?.length > 0 ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)'}
+            />
+          </TouchableOpacity>
+        </Animated.View>
+      </PanGestureHandler>
     </View>
   );
 }
@@ -93,9 +103,45 @@ function SwipeablePlayerRow({ player, onPress, onSubstitute }) {
 export default function LineupScreen({ selectedTeam }) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const route = useRoute();
 
   const { data: lineupData, loading: lineupLoading, error: lineupError } = useStarterLineup(selectedTeam);
   const { data: teamData, loading: teamLoading, error: teamError } = useTeamInfo(selectedTeam);
+
+  const [players, setPlayers] = useState([]);
+
+  useEffect(() => {
+    if (lineupData?.players) {
+      setPlayers(lineupData.players.map((player) => ({
+        order: player.battingOrder,
+        name: player.name,
+        position: player.position,
+        bats: player.batThrow,
+        lyrics: player.cheerSongs?.[0]?.lyrics || '',
+        playerCode: player.playerCode,
+        cheerSongs: player.cheerSongs,
+      })));
+    }
+  }, [lineupData]);
+
+  useEffect(() => {
+    const sub = route.params?.substitution;
+    if (!sub) return;
+
+    setPlayers((prev) => prev.map((p) => {
+      if (p.playerCode !== sub.originalPlayerCode) return p;
+      return {
+        order: p.order,
+        name: sub.newPlayer.name,
+        position: '교체선수',
+        bats: sub.newPlayer.batThrow || '',
+        lyrics: sub.newPlayer.cheerSongs?.[0]?.lyrics || '',
+        playerCode: sub.newPlayer.playerCode,
+        cheerSongs: sub.newPlayer.cheerSongs || [],
+      };
+    }));
+    navigation.setParams({ substitution: undefined });
+  }, [route.params?.substitution]);
 
   const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
   const teamName = TEAM_NAMES[selectedTeam] || '';
@@ -117,16 +163,6 @@ export default function LineupScreen({ selectedTeam }) {
       </View>
     );
   }
-
-  const players = lineupData?.players?.map((player) => ({
-    order: player.battingOrder,
-    name: player.name,
-    position: player.position,
-    bats: player.batThrow,
-    lyrics: player.cheerSongs?.[0]?.lyrics || '',
-    playerCode: player.playerCode,
-    cheerSongs: player.cheerSongs,
-  })) || [];
 
   return (
     <View style={styles.container}>
@@ -195,7 +231,11 @@ export default function LineupScreen({ selectedTeam }) {
                     });
                   }}
                   onSubstitute={(p) => {
-                    navigation.navigate('Substitute', { player: p });
+                    navigation.navigate('Substitute', {
+                      player: p,
+                      lineup: players,
+                      selectedTeam,
+                    });
                   }}
                 />
               ))}
@@ -339,10 +379,13 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   substituteButton: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
     width: 72,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingLeft: 8,
   },
   substituteInner: {
     alignItems: 'center',

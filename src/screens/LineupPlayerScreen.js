@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Audio } from 'expo-av';
 import { colors } from '../constants/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HORIZONTAL_MARGIN = 30;
 const TOP_BAR_HEIGHT = 48;
 const PAGINATION_HEIGHT = 50;
+
+const TEAM_NAMES = {
+  ob: '두산', hh: '한화', ht: '기아', wo: '키움', kt: 'KT',
+  lg: 'LG', lt: '롯데', nc: 'NC', ss: '삼성', sk: 'SSG',
+};
+
+const formatDate = (date) => {
+  const d = date || new Date();
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+};
 
 export default function LineupPlayerScreen() {
   const insets = useSafeAreaInsets();
@@ -27,6 +38,62 @@ export default function LineupPlayerScreen() {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPlaying, setIsPlaying] = useState(false);
   const flatListRef = useRef(null);
+  const soundRef = useRef(null);
+
+  const onPlaybackStatusUpdate = useCallback((status) => {
+    if (status.isLoaded) {
+      setIsPlaying(status.isPlaying);
+    }
+  }, []);
+
+  const loadAudio = useCallback(async () => {
+    if (soundRef.current) {
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+    setIsPlaying(false);
+
+    const url = lineup[currentIndex]?.cheerSongs?.[0]?.audioUrl;
+    if (!url) return;
+
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: url },
+        { shouldPlay: true },
+        onPlaybackStatusUpdate
+      );
+      soundRef.current = sound;
+    } catch (err) {
+      console.error('Audio load error:', err);
+    }
+  }, [currentIndex, lineup, onPlaybackStatusUpdate]);
+
+  useEffect(() => {
+    Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+    });
+
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    loadAudio();
+  }, [loadAudio]);
+
+  const handlePlayPause = async () => {
+    if (!soundRef.current) return;
+
+    if (isPlaying) {
+      await soundRef.current.pauseAsync();
+    } else {
+      await soundRef.current.playAsync();
+    }
+  };
 
   const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
   const cardHeight = SCREEN_HEIGHT - insets.top - TOP_BAR_HEIGHT - PAGINATION_HEIGHT - insets.bottom - 80;
@@ -37,51 +104,71 @@ export default function LineupPlayerScreen() {
     }
   }).current;
 
-  const renderCard = ({ item }) => (
-    <View style={styles.cardWrapper}>
-      <View style={styles.cardShadow}>
-        <LinearGradient
-          colors={[teamColor, `${teamColor}E6`, `${teamColor}B3`]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.8, y: 1 }}
-          style={[styles.card, { height: cardHeight }]}
-        >
-          <View style={styles.decorCircleLarge} />
-          <View style={styles.decorCircleMedium} />
-          <View style={styles.decorCircleSmall} />
+  const renderCard = ({ item }) => {
+    const hasCheerSong = item.cheerSongs?.length > 0;
 
-          <View style={styles.cardHeader}>
-            <View style={styles.playerInfo}>
-              <Text style={styles.orderNumber}>{item.order}</Text>
-              <View style={styles.nameBlock}>
-                <Text style={styles.playerName}>{item.name}</Text>
-                <View style={styles.subtitleRow}>
-                  <View style={styles.subtitleDot} />
-                  <Text style={styles.subtitle}>기본 응원가</Text>
+    return (
+      <View style={styles.cardWrapper}>
+        <View style={styles.cardShadow}>
+          <LinearGradient
+            colors={[teamColor, `${teamColor}E6`, `${teamColor}B3`]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={[styles.card, { height: cardHeight }]}
+          >
+            <View style={styles.decorCircleLarge} />
+            <View style={styles.decorCircleMedium} />
+            <View style={styles.decorCircleSmall} />
+
+            <View style={styles.cardHeader}>
+              <View style={styles.playerInfo}>
+                <Text style={styles.orderNumber}>{item.order}</Text>
+                <View style={styles.nameBlock}>
+                  <Text style={styles.playerName}>{item.name}</Text>
+                  <View style={styles.subtitleRow}>
+                    <View style={styles.subtitleDot} />
+                    <Text style={styles.subtitle}>
+                      {hasCheerSong ? '기본 응원가' : '응원가 준비 중'}
+                    </Text>
+                  </View>
                 </View>
               </View>
+              {hasCheerSong && (
+                <TouchableOpacity
+                  style={styles.playButton}
+                  activeOpacity={0.8}
+                  onPress={handlePlayPause}
+                >
+                  <Ionicons
+                    name={isPlaying ? 'pause' : 'play'}
+                    size={20}
+                    color="#fff"
+                    style={isPlaying ? {} : { marginLeft: 2 }}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
-            <TouchableOpacity
-              style={styles.playButton}
-              activeOpacity={0.8}
-              onPress={() => setIsPlaying(!isPlaying)}
-            >
-              <Ionicons
-                name={isPlaying ? 'pause' : 'play'}
-                size={20}
-                color="#fff"
-                style={isPlaying ? {} : { marginLeft: 2 }}
-              />
-            </TouchableOpacity>
-          </View>
 
-          <View style={styles.lyricsContainer}>
-            <Text style={styles.lyrics}>{item.lyrics}</Text>
-          </View>
-        </LinearGradient>
+            <View style={styles.lyricsContainer}>
+              {hasCheerSong ? (
+                <Text style={styles.lyrics}>{item.lyrics}</Text>
+              ) : (
+                <View style={styles.emptyCheer}>
+                  <Text style={styles.emptyCheerEmoji}>( ' _ ' )</Text>
+                  <Text style={styles.emptyCheerText}>
+                    아직 응원가가 없어요
+                  </Text>
+                  <Text style={styles.emptyCheerSub}>
+                    곧 멋진 응원가가 등록될 거예요!
+                  </Text>
+                </View>
+              )}
+            </View>
+          </LinearGradient>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <LinearGradient
@@ -94,8 +181,10 @@ export default function LineupPlayerScreen() {
           <Ionicons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.topBarCenter}>
-          <Text style={styles.topBarDate}>{game?.date || ''}</Text>
-          <Text style={styles.topBarMatch}>{game?.home || ''} vs {game?.away || ''}</Text>
+          <Text style={styles.topBarDate}>{formatDate(new Date())}</Text>
+          <Text style={styles.topBarMatch}>
+            {TEAM_NAMES[selectedTeam] || ''} vs {TEAM_NAMES[game?.opponentTeamCode] || ''}
+          </Text>
         </View>
         <View style={styles.topBarSpacer} />
       </View>
@@ -269,6 +358,28 @@ const styles = StyleSheet.create({
     color: colors.text.inverse,
     lineHeight: 44,
     letterSpacing: -0.3,
+  },
+  emptyCheer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCheerEmoji: {
+    fontFamily: 'Pretendard-Bold',
+    fontSize: 36,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: 16,
+  },
+  emptyCheerText: {
+    fontFamily: 'Pretendard-Bold',
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 8,
+  },
+  emptyCheerSub: {
+    fontFamily: 'Pretendard-Regular',
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
   },
   pagination: {
     flexDirection: 'row',

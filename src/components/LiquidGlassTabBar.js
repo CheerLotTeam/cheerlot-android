@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -50,9 +52,41 @@ export default function LiquidGlassTabBar({ state, navigation }) {
   const expandedSearchWidth = ROW_WIDTH - COLLAPSED_TAB_WIDTH - BAR_GAP;
 
   const inputRef = useRef(null);
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
 
   const translateX = useRef(new Animated.Value(0)).current;
   const searchAnim = useRef(new Animated.Value(isSearching ? 1 : 0)).current;
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const onShow = (e) => {
+      Animated.spring(keyboardHeight, {
+        toValue: e.endCoordinates.height,
+        useNativeDriver: false,
+        tension: 68,
+        friction: 12,
+      }).start();
+    };
+
+    const onHide = () => {
+      Animated.spring(keyboardHeight, {
+        toValue: 0,
+        useNativeDriver: false,
+        tension: 68,
+        friction: 12,
+      }).start();
+    };
+
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     Animated.spring(translateX, {
@@ -125,7 +159,7 @@ export default function LiquidGlassTabBar({ state, navigation }) {
   });
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: insets.bottom + 12 }]}>
+    <Animated.View style={[styles.wrapper, { paddingBottom: insets.bottom + 12, bottom: keyboardHeight }]}>
       <View style={styles.barRow}>
         {/* Tabs */}
         <Animated.View style={[styles.tabsGlass, { width: tabsAnimatedWidth }]}>
@@ -250,7 +284,7 @@ export default function LiquidGlassTabBar({ state, navigation }) {
           </BlurView>
         </Animated.View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

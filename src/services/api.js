@@ -1,8 +1,10 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 
+const baseURL = Constants.expoConfig?.extra?.apiBaseUrl || '';
+
 const api = axios.create({
-    baseURL: Constants.expoConfig?.extra?.apiBaseUrl || '',
+    baseURL,
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
@@ -24,10 +26,9 @@ api.interceptors.response.use(
     },
     (error) => {
         if (error.response) {
-            const { errorCode, message } = error.response.data;
-            console.error(`[API Error] ${errorCode}: ${message}`);
+            console.error('[API Error]', error.response.status, error.response.data);
         } else {
-            console.error(`[Network Error]`, error.message);
+            console.error('[Network Error]', error.message);
         }
         return Promise.reject(error);
     }

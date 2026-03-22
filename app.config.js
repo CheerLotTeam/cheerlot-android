@@ -29,9 +29,22 @@ export default {
     web: {
       favicon: './assets/favicon.png',
     },
-    plugins: ['expo-font'],
+    plugins: [
+      'expo-font',
+      [
+        'expo-build-properties',
+        {
+          android: {
+            usesCleartextTraffic: true,
+          },
+        },
+      ],
+    ],
     extra: {
       apiBaseUrl: process.env.API_BASE_URL || '',
+      eas: {
+        projectId: '76f6d245-078f-47ff-a20c-f6389f3d64cf',
+      },
     },
   },
 };

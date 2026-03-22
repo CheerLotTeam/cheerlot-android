@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer } from '@react-navigation/native';
@@ -53,7 +54,7 @@ function AppContent() {
 
   return (
     <NavigationContainer>
-      <View style={styles.container}>
+      <GestureHandlerRootView style={styles.container}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="HomeTabs" component={HomeTabs} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
@@ -66,7 +67,7 @@ function AppContent() {
         </Stack.Navigator>
         {showTeamSelect && <TeamSelectScreen />}
         <StatusBar style="dark" />
-      </View>
+      </GestureHandlerRootView>
     </NavigationContainer>
   );
 }

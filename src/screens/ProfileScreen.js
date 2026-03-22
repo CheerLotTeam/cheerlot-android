@@ -42,7 +42,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (isChangingTeam.current) {
       isChangingTeam.current = false;
-      navigation.goBack();
+      navigation.navigate('HomeTabs', { screen: 'Lineup' });
     }
   }, [selectedTeam]);
 
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => navigation.navigate('HomeTabs', { screen: 'Lineup' })} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>설정</Text>

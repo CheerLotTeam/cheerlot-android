@@ -28,7 +28,7 @@ export default function CheerPlayerScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const route = useRoute();
-  const { player, players = [], currentIndex = 0, selectedTeam = 'samsung' } = route.params;
+  const { player, players = [], currentIndex = 0, selectedTeam = 'ss' } = route.params;
 
   const [playerIndex, setPlayerIndex] = useState(currentIndex);
   const [isPlaying, setIsPlaying] = useState(false);

@@ -14,7 +14,13 @@ export const useStarterLineup = (teamCode) => {
 
         try {
             const result = await getStarterLineup(teamCode);
-            setData(result);
+            const seen = new Set();
+            const uniquePlayers = result.players?.filter((p) => {
+                if (seen.has(p.playerCode)) return false;
+                seen.add(p.playerCode);
+                return true;
+            });
+            setData({ ...result, players: uniquePlayers });
         } catch (err) {
             setError(err);
         } finally {

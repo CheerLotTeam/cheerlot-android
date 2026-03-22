@@ -15,11 +15,11 @@ const GRAYSCALE = {
 };
 
 const TEAM_COLORS = {
-  kia: {
+  ht: {
     primary: '#EA0029',
     secondary: '#000000',
   },
-  samsung: {
+  ss: {
     primary: '#074CA1',
     secondary: '#FFFFFF',
   },
@@ -27,7 +27,7 @@ const TEAM_COLORS = {
     primary: '#C30452',
     secondary: '#000000',
   },
-  doosan: {
+  ob: {
     primary: '#131230',
     secondary: '#FFFFFF',
   },
@@ -35,7 +35,7 @@ const TEAM_COLORS = {
     primary: '#000000',
     secondary: '#EB1F28',
   },
-  ssg: {
+  sk: {
     primary: '#CE0E2D',
     secondary: '#B8964B',
   },
@@ -43,15 +43,15 @@ const TEAM_COLORS = {
     primary: '#315288',
     secondary: '#B99E67',
   },
-  hanwha: {
+  hh: {
     primary: '#FF6600',
     secondary: '#000000',
   },
-  lotte: {
+  lt: {
     primary: '#002955',
     secondary: '#D21F37',
   },
-  kiwoom: {
+  wo: {
     primary: '#820024',
     secondary: '#000000',
   },

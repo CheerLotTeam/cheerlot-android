@@ -9,16 +9,16 @@ import { useSearch } from '../contexts/SearchContext';
 import { useTeamPlayers } from '../hooks/useTeamPlayers';
 
 const TEAM_INFO = {
-  doosan: { name: 'DOOSAN BEARS', slogan: 'WE ARE THE BEARS' },
-  hanwha: { name: 'HANWHA EAGLES', slogan: 'FLY HIGH' },
-  kia: { name: 'KIA TIGERS', slogan: 'TIGER PRIDE' },
-  kiwoom: { name: 'KIWOOM HEROES', slogan: 'BEYOND THE HERO' },
+  ob: { name: 'DOOSAN BEARS', slogan: 'WE ARE THE BEARS' },
+  hh: { name: 'HANWHA EAGLES', slogan: 'FLY HIGH' },
+  ht: { name: 'KIA TIGERS', slogan: 'TIGER PRIDE' },
+  wo: { name: 'KIWOOM HEROES', slogan: 'BEYOND THE HERO' },
   kt: { name: 'KT WIZ', slogan: 'WIZ ON TOP' },
   lg: { name: 'LG TWINS', slogan: 'TWIN POWER' },
-  lotte: { name: 'LOTTE GIANTS', slogan: 'GIANT STEP' },
+  lt: { name: 'LOTTE GIANTS', slogan: 'GIANT STEP' },
   nc: { name: 'NC DINOS', slogan: 'DINO POWER' },
-  samsung: { name: 'SAMSUNG LIONS', slogan: 'WIN OR WOW!' },
-  ssg: { name: 'SSG LANDERS', slogan: 'LANDING ON TOP' },
+  ss: { name: 'SAMSUNG LIONS', slogan: 'WIN OR WOW!' },
+  sk: { name: 'SSG LANDERS', slogan: 'LANDING ON TOP' },
 };
 
 export default function AllPlayersScreen({ selectedTeam }) {
@@ -69,21 +69,25 @@ export default function AllPlayersScreen({ selectedTeam }) {
     );
   });
 
+  const playablePlayers = filteredPlayers.filter((p) => p.cheerSongs?.length > 0);
+
   const handlePlayAll = () => {
-    if (filteredPlayers.length === 0) return;
+    if (playablePlayers.length === 0) return;
     navigation.navigate('CheerPlayer', {
-      player: filteredPlayers[0],
-      players: filteredPlayers,
+      player: playablePlayers[0],
+      players: playablePlayers,
       currentIndex: 0,
       selectedTeam,
     });
   };
 
-  const handlePlayerPress = (player, index) => {
+  const handlePlayerPress = (player) => {
+    if (!player.cheerSongs?.length) return;
+    const playerIndex = playablePlayers.findIndex((p) => p.id === player.id);
     navigation.navigate('CheerPlayer', {
       player,
-      players: filteredPlayers,
-      currentIndex: index,
+      players: playablePlayers,
+      currentIndex: playerIndex,
       selectedTeam,
     });
   };
@@ -134,12 +138,12 @@ export default function AllPlayersScreen({ selectedTeam }) {
         </View>
 
         <View style={styles.playerList}>
-          {filteredPlayers.map((player, index) => (
+          {filteredPlayers.map((player) => (
             <TouchableOpacity
               key={player.id}
               style={styles.playerRow}
               activeOpacity={0.7}
-              onPress={() => handlePlayerPress(player, index)}
+              onPress={() => handlePlayerPress(player)}
             >
               <View style={styles.playerInfo}>
                 <Text style={styles.playerName}>
@@ -147,7 +151,11 @@ export default function AllPlayersScreen({ selectedTeam }) {
                   <Text style={styles.playerNumber}>  {player.number}</Text>
                 </Text>
               </View>
-              <Ionicons name="caret-forward" size={18} color={teamColor} />
+              <Ionicons
+                name="caret-forward"
+                size={18}
+                color={player.cheerSongs?.length > 0 ? teamColor : colors.grayscale.gray300}
+              />
             </TouchableOpacity>
           ))}
         </View>
