@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,13 @@ import {
   FlatList,
   Dimensions,
   TouchableOpacity,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Audio } from 'expo-av';
+import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 import { colors } from '../constants/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -36,63 +37,42 @@ export default function LineupPlayerScreen() {
   const { lineup, initialIndex = 0, selectedTeam, game } = route.params;
 
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [isPlaying, setIsPlaying] = useState(false);
   const flatListRef = useRef(null);
-  const soundRef = useRef(null);
 
-  const onPlaybackStatusUpdate = useCallback((status) => {
-    if (status.isLoaded) {
-      setIsPlaying(status.isPlaying);
-    }
-  }, []);
-
-  const loadAudio = useCallback(async () => {
-    if (soundRef.current) {
-      await soundRef.current.unloadAsync();
-      soundRef.current = null;
-    }
-    setIsPlaying(false);
-
-    const url = lineup[currentIndex]?.cheerSongs?.[0]?.audioUrl;
-    if (!url) return;
-
-    try {
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: url },
-        { shouldPlay: true },
-        onPlaybackStatusUpdate
-      );
-      soundRef.current = sound;
-    } catch (err) {
-      console.error('Audio load error:', err);
-    }
-  }, [currentIndex, lineup, onPlaybackStatusUpdate]);
+  const audioUrl = lineup[currentIndex]?.cheerSongs?.[0]?.audioUrl || null;
+  const audioPlayer = useAudioPlayer(audioUrl ? { uri: audioUrl } : null);
+  const audioStatus = useAudioPlayerStatus(audioPlayer);
+  const isPlaying = audioStatus?.playing ?? false;
 
   useEffect(() => {
-    Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-    });
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+    }).catch((err) => console.warn('setAudioMode failed', err));
+  }, []);
 
-    return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
+  useEffect(() => {
+    if (!audioPlayer || !audioUrl) return;
+    audioPlayer.play();
+  }, [audioPlayer, audioUrl]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' && audioPlayer) {
+        try { audioPlayer.pause(); } catch {}
       }
-    };
-  }, []);
+    });
+    return () => sub.remove();
+  }, [audioPlayer]);
 
-  useEffect(() => {
-    loadAudio();
-  }, [loadAudio]);
-
-  const handlePlayPause = async () => {
-    if (!soundRef.current) return;
-
-    if (isPlaying) {
-      await soundRef.current.pauseAsync();
-    } else {
-      await soundRef.current.playAsync();
-    }
+  const lastToggleRef = useRef(0);
+  const handlePlayPause = () => {
+    if (!audioPlayer) return;
+    const now = Date.now();
+    if (now - lastToggleRef.current < 250) return;
+    lastToggleRef.current = now;
+    if (isPlaying) audioPlayer.pause();
+    else audioPlayer.play();
   };
 
   const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
@@ -111,11 +91,25 @@ export default function LineupPlayerScreen() {
       <View style={styles.cardWrapper}>
         <View style={styles.cardShadow}>
           <LinearGradient
-            colors={[teamColor, `${teamColor}E6`, `${teamColor}B3`]}
+            colors={[teamColor, teamColor]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 0.8, y: 1 }}
+            end={{ x: 0, y: 1 }}
             style={[styles.card, { height: cardHeight }]}
           >
+            <LinearGradient
+              colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.cardShine}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.15)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.cardDepth}
+              pointerEvents="none"
+            />
             <View style={styles.decorCircleLarge} />
             <View style={styles.decorCircleMedium} />
             <View style={styles.decorCircleSmall} />
@@ -177,7 +171,13 @@ export default function LineupPlayerScreen() {
       style={[styles.container, { paddingTop: insets.top }]}
     >
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityLabel="닫기"
+          accessibilityRole="button"
+        >
           <Ionicons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.topBarCenter}>
@@ -207,7 +207,7 @@ export default function LineupPlayerScreen() {
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
         />
-        <View style={styles.pagination}>
+        <View style={[styles.pagination, { marginBottom: insets.bottom + 24 }]}>
           {lineup.map((_, index) => (
             <View
               key={index}
@@ -257,18 +257,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: CARD_HORIZONTAL_MARGIN,
   },
   cardShadow: {
-    borderRadius: 28,
+    borderRadius: 36,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 15,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.28,
+    shadowRadius: 40,
+    elevation: 16,
   },
   card: {
-    borderRadius: 28,
+    borderRadius: 36,
     padding: 28,
     justifyContent: 'space-between',
     overflow: 'hidden',
+  },
+  cardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 180,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+  },
+  cardDepth: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 260,
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
   },
   decorCircleLarge: {
     position: 'absolute',
@@ -387,7 +405,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginTop: 20,
-    marginBottom: 12,
   },
   dot: {
     width: 8,

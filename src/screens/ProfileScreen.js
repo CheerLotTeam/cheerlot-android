@@ -42,7 +42,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (isChangingTeam.current) {
       isChangingTeam.current = false;
-      navigation.navigate('HomeTabs', { screen: 'Lineup' });
+      navigation.popToTop();
     }
   }, [selectedTeam]);
 
@@ -54,7 +54,13 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeTabs', { screen: 'Lineup' })} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityLabel="뒤로"
+          accessibilityRole="button"
+        >
           <Ionicons name="chevron-back" size={28} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>설정</Text>
@@ -70,16 +76,23 @@ export default function ProfileScreen() {
         <View style={styles.teamCardOuter}>
           <TouchableOpacity activeOpacity={0.9} onPress={handleChangeTeam}>
             <LinearGradient
-              colors={[teamColor, `${teamColor}CC`]}
+              colors={[teamColor, teamColor]}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
               style={styles.teamCard}
             >
               <LinearGradient
-                colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0)']}
+                colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={styles.teamCardShine}
+              />
+              <LinearGradient
+                colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.15)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.teamCardDepth}
+                pointerEvents="none"
               />
               <View style={styles.teamCardContent}>
                 <Text style={styles.teamName}>{teamInfo?.nameEn || ''}</Text>
@@ -156,29 +169,36 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   teamCardOuter: {
-    borderRadius: 24,
+    borderRadius: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.35,
-    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.28,
+    shadowRadius: 40,
     elevation: 16,
   },
   teamCard: {
-    borderRadius: 20,
-    paddingVertical: 24,
+    borderRadius: 28,
+    paddingVertical: 26,
     paddingHorizontal: 20,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
   teamCardShine: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 80,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    height: 100,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
+  teamCardDepth: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 140,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
   teamCardContent: {
     alignItems: 'center',

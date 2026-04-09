@@ -3,9 +3,11 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Animated,
   Dimensions,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,32 +25,20 @@ export default function TeamSelectScreen() {
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   useEffect(() => {
-    Animated.spring(translateY, {
+    Animated.timing(translateY, {
       toValue: 0,
+      duration: 280,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
-      tension: 65,
-      friction: 11,
     }).start();
   }, []);
 
   const handleSelect = (teamId) => {
-    Animated.timing(translateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      selectTeam(teamId);
-    });
+    selectTeam(teamId);
   };
 
   const handleClose = () => {
-    Animated.timing(translateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      closeTeamSelect();
-    });
+    closeTeamSelect();
   };
 
   return (
@@ -63,28 +53,32 @@ export default function TeamSelectScreen() {
             {TEAMS.map((team) => {
               const teamColor = colors.team[team.id].primary;
               return (
-                <View key={team.id} style={styles.cardOuter}>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => handleSelect(team.id)}
+                <Pressable
+                  key={team.id}
+                  style={({ pressed }) => [styles.cardOuter, pressed && { opacity: 0.7 }]}
+                  onPress={() => handleSelect(team.id)}
+                  android_disableSound={false}
+                  hitSlop={4}
+                  accessibilityLabel={`${team.nameKo} 선택`}
+                  accessibilityRole="button"
+                >
+                  <LinearGradient
+                    colors={[teamColor, teamColor]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.card}
                   >
                     <LinearGradient
-                      colors={[teamColor, teamColor]}
+                      colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0)']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 0, y: 1 }}
-                      style={styles.card}
-                    >
-                      <LinearGradient
-                        colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0)']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={styles.cardShine}
-                      />
-                      <Text style={styles.teamNameEn}>{team.nameEn.replace(' ', '\n')}</Text>
-                      <Text style={styles.teamNameKo}>{team.nameKo}</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
+                      style={styles.cardShine}
+                      pointerEvents="none"
+                    />
+                    <Text style={styles.teamNameEn}>{team.nameEn.replace(' ', '\n')}</Text>
+                    <Text style={styles.teamNameKo}>{team.nameKo}</Text>
+                  </LinearGradient>
+                </Pressable>
               );
             })}
           </View>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useTeamPlayers } from '../hooks/useTeamPlayers';
+import { useLineup } from '../contexts/LineupContext';
 
 export default function SubstituteScreen() {
   const insets = useSafeAreaInsets();
@@ -21,26 +22,23 @@ export default function SubstituteScreen() {
 
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const { data: playersData, loading, error } = useTeamPlayers(selectedTeam);
+  const { applySubstitution } = useLineup();
 
   const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
 
-  const starterCodes = lineup.map((p) => p.playerCode);
-  const benchPlayers = (playersData?.players || [])
-    .filter((p) => !starterCodes.includes(p.playerCode))
-    .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const benchPlayers = useMemo(() => {
+    const starterCodes = new Set(lineup.map((p) => p.playerCode));
+    return (playersData?.players || [])
+      .filter((p) => !starterCodes.has(p.playerCode))
+      .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  }, [lineup, playersData]);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     if (!selectedPlayer) return;
-    navigation.navigate('HomeTabs', {
-      screen: 'Lineup',
-      params: {
-        substitution: {
-          originalPlayerCode: player.playerCode,
-          newPlayer: selectedPlayer,
-        },
-      },
-    });
-  };
+    const keyCode = player.originalPlayerCode || player.playerCode;
+    applySubstitution(keyCode, selectedPlayer);
+    navigation.goBack();
+  }, [selectedPlayer, player, applySubstitution, navigation]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

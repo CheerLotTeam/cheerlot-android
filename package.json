@@ -17,7 +17,7 @@
     "axios": "^1.13.3",
     "dotenv": "^17.2.3",
     "expo": "~54.0.31",
-    "expo-av": "~16.0.8",
+    "expo-audio": "~1.1.1",
     "expo-blur": "~15.0.8",
     "expo-build-properties": "~1.0.10",
     "expo-dev-client": "~6.0.20",

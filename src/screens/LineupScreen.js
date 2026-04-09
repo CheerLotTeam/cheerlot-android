@@ -1,14 +1,21 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
+import { useRef, useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { colors } from '../constants/colors';
-import { useStarterLineup } from '../hooks/useStarterLineup';
+import { useLineup } from '../contexts/LineupContext';
 import { useTeamInfo } from '../hooks/useTeamInfo';
+import { TEAMS } from '../contexts/TeamContext';
+
+const getTeamKoName = (code) => {
+  if (!code) return '';
+  const team = TEAMS.find((t) => t.id === code.toLowerCase());
+  return team?.nameKo || code.toUpperCase();
+};
 
 const TEAM_NAMES = {
   ob: 'DOOSAN BEARS',
@@ -87,7 +94,7 @@ function SwipeablePlayerRow({ player, onPress, onSubstitute }) {
           >
             <Text style={styles.orderNumber}>{player.order}</Text>
             <Text style={styles.playerName}>{player.name}</Text>
-            <Text style={styles.playerDetail}>{player.position}, {player.bats}</Text>
+            <Text style={styles.playerDetail}>{[player.position, player.bats].filter(Boolean).join(', ')}</Text>
             <Ionicons
               name="play"
               size={14}
@@ -103,16 +110,44 @@ function SwipeablePlayerRow({ player, onPress, onSubstitute }) {
 export default function LineupScreen({ selectedTeam }) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const route = useRoute();
 
-  const { data: lineupData, loading: lineupLoading, error: lineupError } = useStarterLineup(selectedTeam);
-  const { data: teamData, loading: teamLoading, error: teamError } = useTeamInfo(selectedTeam);
+  const {
+    data: lineupData,
+    substitutions,
+    loading: lineupLoading,
+    error: lineupError,
+    refetch: refetchLineup,
+  } = useLineup();
+  const { data: teamData, loading: teamLoading, error: teamError, refetch: refetchTeam } = useTeamInfo(selectedTeam);
 
-  const [players, setPlayers] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchLineup(), refetchTeam()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchLineup, refetchTeam]);
 
-  useEffect(() => {
-    if (lineupData?.players) {
-      setPlayers(lineupData.players.map((player) => ({
+  const players = useMemo(() => {
+    if (!lineupData?.players) return [];
+    return lineupData.players.map((player) => {
+      const sub = substitutions?.[player.playerCode];
+      if (sub) {
+        return {
+          order: player.battingOrder,
+          name: sub.name,
+          position: '교체선수',
+          bats: '',
+          lyrics: sub.cheerSongs?.[0]?.lyrics || '',
+          playerCode: sub.playerCode,
+          cheerSongs: sub.cheerSongs || [],
+          isSubstituted: true,
+          originalPlayerCode: player.playerCode,
+        };
+      }
+      return {
         order: player.battingOrder,
         name: player.name,
         position: player.position,
@@ -120,28 +155,9 @@ export default function LineupScreen({ selectedTeam }) {
         lyrics: player.cheerSongs?.[0]?.lyrics || '',
         playerCode: player.playerCode,
         cheerSongs: player.cheerSongs,
-      })));
-    }
-  }, [lineupData]);
-
-  useEffect(() => {
-    const sub = route.params?.substitution;
-    if (!sub) return;
-
-    setPlayers((prev) => prev.map((p) => {
-      if (p.playerCode !== sub.originalPlayerCode) return p;
-      return {
-        order: p.order,
-        name: sub.newPlayer.name,
-        position: '교체선수',
-        bats: sub.newPlayer.batThrow || '',
-        lyrics: sub.newPlayer.cheerSongs?.[0]?.lyrics || '',
-        playerCode: sub.newPlayer.playerCode,
-        cheerSongs: sub.newPlayer.cheerSongs || [],
       };
-    }));
-    navigation.setParams({ substitution: undefined });
-  }, [route.params?.substitution]);
+    });
+  }, [lineupData, substitutions]);
 
   const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
   const teamName = TEAM_NAMES[selectedTeam] || '';
@@ -160,6 +176,17 @@ export default function LineupScreen({ selectedTeam }) {
       <View style={[styles.container, styles.centerContent]}>
         <Ionicons name="alert-circle-outline" size={48} color={colors.text.tertiary} />
         <Text style={styles.errorText}>데이터를 불러올 수 없습니다</Text>
+        <TouchableOpacity
+          style={[styles.retryButton, { backgroundColor: teamColor }]}
+          activeOpacity={0.7}
+          onPress={() => {
+            if (lineupError) refetchLineup();
+            if (teamError) refetchTeam();
+          }}
+        >
+          <Ionicons name="refresh" size={16} color="#FFFFFF" />
+          <Text style={styles.retryText}>다시 시도</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -172,6 +199,9 @@ export default function LineupScreen({ selectedTeam }) {
           { paddingTop: insets.top + 16, paddingBottom: 100 },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={teamColor} colors={[teamColor]} />
+        }
       >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>선발 라인업</Text>
@@ -179,6 +209,9 @@ export default function LineupScreen({ selectedTeam }) {
             style={styles.profileButton}
             onPress={() => navigation.navigate('Profile')}
             activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="설정 열기"
+            accessibilityRole="button"
           >
             <BlurView intensity={50} tint="light" style={styles.profileBlur}>
               <View style={styles.profileGlass} />
@@ -189,16 +222,23 @@ export default function LineupScreen({ selectedTeam }) {
 
         <View style={styles.cardOuter}>
           <LinearGradient
-            colors={[`${teamColor}`, `${teamColor}CC`]}
+            colors={[teamColor, teamColor]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.card}
           >
             <LinearGradient
-              colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0)']}
+              colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0)']}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
               style={styles.cardShine}
+            />
+            <LinearGradient
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.15)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.cardDepth}
+              pointerEvents="none"
             />
 
             <Text style={styles.teamName}>{teamName}</Text>
@@ -207,7 +247,7 @@ export default function LineupScreen({ selectedTeam }) {
               <Ionicons name="calendar-outline" size={13} color="rgba(255,255,255,0.85)" />
               <Text style={styles.gameBadgeText}>
                 {teamData?.hasTodayGame
-                  ? `오늘 경기 | vs ${teamData.opponentTeamCode?.toUpperCase()}`
+                  ? `${getTeamKoName(selectedTeam)} vs ${getTeamKoName(teamData.opponentTeamCode)}`
                   : '오늘 경기 없음'}
               </Text>
               <View style={styles.gameBadgeDivider} />
@@ -268,6 +308,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.tertiary,
   },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  retryText: {
+    fontFamily: 'Pretendard-SemiBold',
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
   scrollContent: {
     paddingHorizontal: 20,
   },
@@ -275,7 +329,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 14,
   },
   headerTitle: {
     fontFamily: 'Pretendard-Bold',
@@ -306,22 +360,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   cardOuter: {
-    borderRadius: 28,
+    borderRadius: 36,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.35,
-    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.28,
+    shadowRadius: 40,
     elevation: 16,
   },
   card: {
-    borderRadius: 24,
-    paddingTop: 28,
-    paddingBottom: 20,
-    paddingHorizontal: 24,
+    borderRadius: 32,
+    paddingTop: 26,
+    paddingBottom: 18,
+    paddingHorizontal: 22,
     alignItems: 'center',
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
   cardShine: {
     position: 'absolute',
@@ -329,27 +381,36 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 120,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+  },
+  cardDepth: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 200,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   teamName: {
     fontFamily: 'RobotoCondensed-Black',
-    fontSize: 34,
+    fontSize: 32,
     color: colors.text.inverse,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   gameBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.25)',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     gap: 6,
-    marginBottom: 24,
+    marginBottom: 18,
   },
   gameBadgeIcon: {
     width: 20,
@@ -406,19 +467,19 @@ const styles = StyleSheet.create({
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 13,
     width: '100%',
     gap: 12,
   },
   orderNumber: {
     fontFamily: 'Pretendard-Bold',
-    fontSize: 20,
+    fontSize: 19,
     color: '#FFFFFF',
-    width: 24,
+    width: 22,
   },
   playerName: {
     fontFamily: 'Pretendard-Bold',
-    fontSize: 18,
+    fontSize: 17,
     color: colors.text.inverse,
   },
   playerDetail: {

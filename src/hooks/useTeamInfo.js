@@ -1,30 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getTeamInfo } from '../services/teamService';
+import { getCachedTeamInfo, setCachedTeamInfo } from '../storage/teamCache';
 
 export const useTeamInfo = (teamCode) => {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    const fetchData = async () => {
-        if (!teamCode) return;
+  const load = useCallback(async () => {
+    if (!teamCode) return;
+    setError(null);
 
+    try {
+      const cached = await getCachedTeamInfo(teamCode);
+
+      if (cached.data) {
+        setData(cached.data);
+        setLoading(false);
+      } else {
         setLoading(true);
-        setError(null);
+      }
 
-        try {
-            const result = await getTeamInfo(teamCode);
-            setData(result);
-        } catch (err) {
-            setError(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+      if (cached.isFresh) return;
 
-    useEffect(() => {
-        fetchData();
-    }, [teamCode]);
+      const fresh = await getTeamInfo(teamCode);
+      setData(fresh);
+      setLoading(false);
+      await setCachedTeamInfo(teamCode, fresh);
+    } catch (err) {
+      setError(err);
+      setLoading(false);
+    }
+  }, [teamCode]);
 
-    return { data, loading, error, refetch: fetchData };
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { data, loading, error, refetch: load };
 };

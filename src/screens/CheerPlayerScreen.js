@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,22 +6,23 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Audio } from 'expo-av';
+import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 import { colors } from '../constants/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const formatTime = (millis) => {
-  if (!millis || millis < 0) return '0:00';
-  const totalSeconds = Math.floor(millis / 1000);
+const formatTime = (seconds) => {
+  if (!seconds || seconds < 0) return '0:00';
+  const totalSeconds = Math.floor(seconds);
   const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const secs = totalSeconds % 60;
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
 };
 
 export default function CheerPlayerScreen() {
@@ -31,95 +32,64 @@ export default function CheerPlayerScreen() {
   const { player, players = [], currentIndex = 0, selectedTeam = 'ss' } = route.params;
 
   const [playerIndex, setPlayerIndex] = useState(currentIndex);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
-
-  const soundRef = useRef(null);
 
   const currentPlayer = players.length > 0 ? players[playerIndex] : player;
   const hasPrevious = players.length > 0 && playerIndex > 0;
   const hasNext = players.length > 0 && playerIndex < players.length - 1;
 
   const audioUrl = currentPlayer?.cheerSongs?.[0]?.audioUrl || null;
+  const audioPlayer = useAudioPlayer(audioUrl ? { uri: audioUrl } : null);
+  const audioStatus = useAudioPlayerStatus(audioPlayer);
 
-  const onPlaybackStatusUpdate = useCallback((status) => {
-    if (status.isLoaded) {
-      setPosition(status.positionMillis || 0);
-      setDuration(status.durationMillis || 0);
-      setProgress(status.durationMillis ? status.positionMillis / status.durationMillis : 0);
-      setIsPlaying(status.isPlaying);
+  const isPlaying = audioStatus?.playing ?? false;
+  const position = audioStatus?.currentTime ?? 0;
+  const duration = audioStatus?.duration ?? 0;
+  const progress = duration > 0 ? position / duration : 0;
 
-      if (status.didJustFinish && hasNext) {
-        setPlayerIndex((prev) => prev + 1);
-      }
+  const finishedRef = useRef(false);
+  useEffect(() => {
+    if (!audioStatus) return;
+    if (audioStatus.didJustFinish && !finishedRef.current) {
+      finishedRef.current = true;
+      if (hasNext) setPlayerIndex((prev) => prev + 1);
     }
-  }, [hasNext]);
-
-  const loadAudio = useCallback(async () => {
-    if (soundRef.current) {
-      await soundRef.current.unloadAsync();
-      soundRef.current = null;
+    if (!audioStatus.didJustFinish) {
+      finishedRef.current = false;
     }
-
-    if (!audioUrl) return;
-
-    try {
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: audioUrl },
-        { shouldPlay: false },
-        onPlaybackStatusUpdate
-      );
-      soundRef.current = sound;
-    } catch (err) {
-      console.error('Audio load error:', err);
-    }
-  }, [audioUrl, onPlaybackStatusUpdate]);
+  }, [audioStatus, hasNext]);
 
   useEffect(() => {
-    Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-    });
-
-    return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
-      }
-    };
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+    }).catch((err) => console.warn('setAudioMode failed', err));
   }, []);
 
   useEffect(() => {
-    loadAudio();
-  }, [loadAudio]);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' && audioPlayer) {
+        try { audioPlayer.pause(); } catch {}
+      }
+    });
+    return () => sub.remove();
+  }, [audioPlayer]);
 
-  const handlePlayPause = async () => {
-    if (!soundRef.current) return;
-
-    if (isPlaying) {
-      await soundRef.current.pauseAsync();
-    } else {
-      await soundRef.current.playAsync();
-    }
+  const lastToggleRef = useRef(0);
+  const handlePlayPause = () => {
+    if (!audioPlayer) return;
+    const now = Date.now();
+    if (now - lastToggleRef.current < 250) return;
+    lastToggleRef.current = now;
+    if (isPlaying) audioPlayer.pause();
+    else audioPlayer.play();
   };
 
-  const handlePrevious = async () => {
-    if (hasPrevious) {
-      if (soundRef.current) {
-        await soundRef.current.stopAsync();
-      }
-      setPlayerIndex(playerIndex - 1);
-    }
+  const handlePrevious = () => {
+    if (hasPrevious) setPlayerIndex(playerIndex - 1);
   };
 
-  const handleNext = async () => {
-    if (hasNext) {
-      if (soundRef.current) {
-        await soundRef.current.stopAsync();
-      }
-      setPlayerIndex(playerIndex + 1);
-    }
+  const handleNext = () => {
+    if (hasNext) setPlayerIndex(playerIndex + 1);
   };
 
   const anim1 = useRef(new Animated.Value(0)).current;
@@ -201,6 +171,9 @@ export default function CheerPlayerScreen() {
           style={styles.closeButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityLabel="닫기"
+          accessibilityRole="button"
         >
           <Ionicons name="chevron-down" size={28} color="rgba(255,255,255,0.8)" />
         </TouchableOpacity>

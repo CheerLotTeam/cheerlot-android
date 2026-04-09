@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,7 +27,17 @@ export default function AllPlayersScreen({ selectedTeam }) {
   const navigation = useNavigation();
   const { searchQuery } = useSearch();
 
-  const { data: playersData, loading, error } = useTeamPlayers(selectedTeam);
+  const { data: playersData, loading, error, refetch } = useTeamPlayers(selectedTeam);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const teamColor = colors.team[selectedTeam]?.primary || colors.grayscale.gray800;
   const teamInfo = TEAM_INFO[selectedTeam] || { name: '', slogan: '' };
@@ -45,6 +56,14 @@ export default function AllPlayersScreen({ selectedTeam }) {
       <View style={[styles.container, styles.centerContent]}>
         <Ionicons name="alert-circle-outline" size={48} color={colors.text.tertiary} />
         <Text style={styles.errorText}>데이터를 불러올 수 없습니다</Text>
+        <TouchableOpacity
+          style={[styles.retryButton, { backgroundColor: teamColor }]}
+          activeOpacity={0.7}
+          onPress={refetch}
+        >
+          <Ionicons name="refresh" size={16} color="#FFFFFF" />
+          <Text style={styles.retryText}>다시 시도</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -58,7 +77,12 @@ export default function AllPlayersScreen({ selectedTeam }) {
     cheerSongs: player.cheerSongs,
   })) || [];
 
-  const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const sortedPlayers = [...players].sort((a, b) => {
+    const aHas = (a.cheerSongs?.length || 0) > 0;
+    const bHas = (b.cheerSongs?.length || 0) > 0;
+    if (aHas !== bHas) return aHas ? -1 : 1;
+    return a.name.localeCompare(b.name, 'ko');
+  });
 
   const filteredPlayers = sortedPlayers.filter((player) => {
     if (!searchQuery) return true;
@@ -100,6 +124,9 @@ export default function AllPlayersScreen({ selectedTeam }) {
           { paddingTop: insets.top + 16, paddingBottom: 100 },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={teamColor} colors={[teamColor]} />
+        }
       >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>전체 선수</Text>
@@ -107,6 +134,9 @@ export default function AllPlayersScreen({ selectedTeam }) {
             style={styles.profileButton}
             onPress={() => navigation.navigate('Profile')}
             activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="설정 열기"
+            accessibilityRole="button"
           >
             <BlurView intensity={50} tint="light" style={styles.profileBlur}>
               <View style={styles.profileGlass} />
@@ -115,15 +145,30 @@ export default function AllPlayersScreen({ selectedTeam }) {
           </TouchableOpacity>
         </View>
 
-        <LinearGradient
-          colors={[teamColor, `${teamColor}CC`]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.teamCard}
-        >
-          <Text style={styles.teamName}>{teamInfo.name}</Text>
-          <Text style={styles.teamSlogan}>{teamInfo.slogan}</Text>
-        </LinearGradient>
+        <View style={styles.teamCardOuter}>
+          <LinearGradient
+            colors={[teamColor, teamColor]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.teamCard}
+          >
+            <LinearGradient
+              colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.teamCardShine}
+            />
+            <LinearGradient
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.15)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.teamCardDepth}
+              pointerEvents="none"
+            />
+            <Text style={styles.teamName}>{teamInfo.name}</Text>
+            <Text style={styles.teamSlogan}>{teamInfo.slogan}</Text>
+          </LinearGradient>
+        </View>
 
         <View style={styles.countRow}>
           <Text style={styles.countText}>총 {filteredPlayers.length}곡</Text>
@@ -136,6 +181,18 @@ export default function AllPlayersScreen({ selectedTeam }) {
             <Ionicons name="musical-notes" size={14} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
+
+        {filteredPlayers.length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="search-outline" size={40} color={colors.text.tertiary} />
+            <Text style={styles.emptyTitle}>
+              {searchQuery ? '검색 결과가 없어요' : '선수가 없어요'}
+            </Text>
+            {searchQuery ? (
+              <Text style={styles.emptySubtitle}>다른 이름이나 등번호로 검색해보세요</Text>
+            ) : null}
+          </View>
+        )}
 
         <View style={styles.playerList}>
           {filteredPlayers.map((player) => (
@@ -185,6 +242,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.tertiary,
   },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  retryText: {
+    fontFamily: 'Pretendard-SemiBold',
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    gap: 8,
+  },
+  emptyTitle: {
+    marginTop: 4,
+    fontFamily: 'Pretendard-SemiBold',
+    fontSize: 15,
+    color: colors.text.secondary,
+  },
+  emptySubtitle: {
+    fontFamily: 'Pretendard-Regular',
+    fontSize: 13,
+    color: colors.text.tertiary,
+  },
   scrollContent: {
     paddingHorizontal: 20,
   },
@@ -222,17 +310,39 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.06)',
     borderRadius: 20,
   },
+  teamCardOuter: {
+    borderRadius: 28,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.28,
+    shadowRadius: 40,
+    elevation: 16,
+  },
   teamCard: {
-    borderRadius: 20,
+    borderRadius: 28,
     paddingVertical: 28,
     paddingHorizontal: 24,
     alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
+    overflow: 'hidden',
+  },
+  teamCardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
+  teamCardDepth: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 140,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
   teamName: {
     fontFamily: 'RobotoCondensed-Black',

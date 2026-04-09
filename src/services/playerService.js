@@ -16,6 +16,10 @@ export const getStarterLineup = async (teamCode) => {
     });
 };
 
+export const getTeamVersion = async (teamCode) => {
+    return api.get(`/api/teams/${teamCode}/version`);
+};
+
 export const getCheerSongUrl = (fileName) => {
     return `${CHEER_SONG_BASE_URL}/${fileName}`;
 };

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -21,6 +21,7 @@ import CopyrightScreen from './src/screens/CopyrightScreen';
 import LiquidGlassTabBar from './src/components/LiquidGlassTabBar';
 import { SearchProvider } from './src/contexts/SearchContext';
 import { TeamProvider, useTeam } from './src/contexts/TeamContext';
+import { LineupProvider } from './src/contexts/LineupContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -34,6 +35,7 @@ function HomeTabs() {
     <Tab.Navigator
       tabBar={(props) => <LiquidGlassTabBar {...props} />}
       screenOptions={{ headerShown: false }}
+      backBehavior="initialRoute"
     >
       <Tab.Screen name="Lineup">
         {() => <LineupScreen selectedTeam={selectedTeam} />}
@@ -47,6 +49,12 @@ function HomeTabs() {
 
 function AppContent() {
   const { isLoaded, showTeamSelect } = useTeam();
+
+  useEffect(() => {
+    if (isLoaded) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isLoaded]);
 
   if (!isLoaded) {
     return null;
@@ -86,22 +94,18 @@ export default function App() {
     'Pretendard-Black': require('./src/assets/fonts/Pretendard-Black.ttf'),
   });
 
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded) {
-      await SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
   if (!fontsLoaded) {
     return null;
   }
 
   return (
-    <SafeAreaProvider onLayout={onLayoutRootView}>
+    <SafeAreaProvider>
       <TeamProvider>
-        <SearchProvider>
-          <AppContent />
-        </SearchProvider>
+        <LineupProvider>
+          <SearchProvider>
+            <AppContent />
+          </SearchProvider>
+        </LineupProvider>
       </TeamProvider>
     </SafeAreaProvider>
   );
