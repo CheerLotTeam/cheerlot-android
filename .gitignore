@@ -1,16 +1,12 @@
-# Compiled class file
+# Compiled class files
 *.class
 
-# Log file
+# Logs
 *.log
+hs_err_pid*
+replay_pid*
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# Java / package files
 *.jar
 *.war
 *.nar
@@ -19,9 +15,55 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+# BlueJ files
+*.ctxt
 
-# Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Kotlin
 .kotlin/
+
+# Gradle
+.gradle/
+build/
+*/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Local configuration
+local.properties
+.env
+.env.*
+*.local
+
+# Android generated
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# Signing / keystore
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Test / coverage
+coverage/
+test-results/
+*.ec
+*.exec
+
+# OS files
+.DS_Store
+Thumbs.db
