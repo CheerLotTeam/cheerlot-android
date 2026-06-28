@@ -12,9 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CheerLot">
         <activity
-            android:name=".MainActivity"
+            android:name=".app.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.CheerLot"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
