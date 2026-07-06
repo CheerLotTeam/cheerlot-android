@@ -1,5 +1,9 @@
 package com.gms.cheerlotandroid.presentation.main
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.SportsBaseball
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 
 internal enum class MainTabDestination(
@@ -8,14 +12,14 @@ internal enum class MainTabDestination(
 ) {
     Lineup(
         label = "라인업",
-        icon = MainTabIcons.Lineup
+        icon = Icons.Filled.SportsBaseball
     ),
     TeamMembers(
         label = "전체선수",
-        icon = MainTabIcons.TeamMembers
+        icon = Icons.Filled.Group
     ),
     Search(
         label = "검색",
-        icon = MainTabIcons.Search
+        icon = Icons.Outlined.Search
     )
 }

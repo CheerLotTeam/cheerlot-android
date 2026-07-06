@@ -83,9 +83,9 @@ private fun MainBottomNavigationBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = CheerLotColor.AppPrimary,
-                    selectedTextColor = CheerLotColor.AppPrimary,
-                    indicatorColor = CheerLotColor.AppPrimary.copy(alpha = 0.12f),
+                    selectedIconColor = CheerLotColor.AppSecondary,
+                    selectedTextColor = CheerLotColor.AppSecondary,
+                    indicatorColor = CheerLotColor.AppSecondary.copy(alpha = 0.12f),
                     unselectedIconColor = GrayScaleColor.Gray400,
                     unselectedTextColor = GrayScaleColor.Gray400
                 )
