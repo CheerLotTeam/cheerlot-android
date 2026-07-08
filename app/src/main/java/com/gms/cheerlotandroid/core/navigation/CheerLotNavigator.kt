@@ -6,21 +6,36 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
+// 화면 이동과 modal 표시 요청을 한 곳에서 관리하는 상태 객체입니다.
+//
+// 사용 기준:
+// - Composable 화면은 NavController를 직접 다루지 않고 이 Navigator에 이동을 요청합니다.
+// - push 화면 이동은 navigate(), 뒤로가기는 popBackStack()을 사용합니다.
+// - 메인 탭 전환은 selectTab()을 사용합니다.
+// - Sheet/FullScreen/Dialog는 각각 show.../dismiss... 함수를 사용합니다.
+//
+// 실제 NavController.navigate(), ModalBottomSheet, Dialog 연결은 app layer의 root composable에서 처리합니다.
+// ViewModel은 이 객체를 직접 들고 있기보다 navigation event를 노출하고, 화면이 event를 받아 호출하는 방식을 우선합니다.
 class CheerLotNavigator(
     initialTab: CheerLotMainTab = CheerLotMainTab.LINEUP,
 ) {
+    // 메인 화면 내부 탭 상태입니다.
     var selectedTab by mutableStateOf(initialTab)
         private set
 
+    // iOS Coordinator의 paths처럼 push 화면 stack을 표현합니다.
     var routeStack by mutableStateOf<List<CheerLotRoute>>(emptyList())
         private set
 
+    // 현재 표시 중인 Bottom Sheet입니다.
     var currentSheet by mutableStateOf<CheerLotSheet?>(null)
         private set
 
+    // 현재 표시 중인 전체 화면 modal입니다.
     var currentFullScreen by mutableStateOf<CheerLotFullScreen?>(null)
         private set
 
+    // 현재 표시 중인 Dialog입니다.
     var currentDialog by mutableStateOf<CheerLotDialog?>(null)
         private set
 
@@ -29,6 +44,7 @@ class CheerLotNavigator(
     }
 
     fun navigate(route: CheerLotRoute) {
+        // 같은 route를 연속으로 push하지 않도록 막습니다.
         if (routeStack.lastOrNull() == route) return
         routeStack = routeStack + route
     }
@@ -44,6 +60,7 @@ class CheerLotNavigator(
     }
 
     fun showSheet(sheet: CheerLotSheet) {
+        // sheet와 full screen은 동시에 표시하지 않습니다.
         currentFullScreen = null
         currentSheet = sheet
     }
@@ -53,6 +70,7 @@ class CheerLotNavigator(
     }
 
     fun showFullScreen(fullScreen: CheerLotFullScreen) {
+        // full screen modal을 띄울 때 열려 있던 sheet는 정리합니다.
         currentSheet = null
         currentFullScreen = fullScreen
     }

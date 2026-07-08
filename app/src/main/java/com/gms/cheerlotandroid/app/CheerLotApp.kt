@@ -14,6 +14,7 @@ fun CheerLotApp(
     appContainer: AppContainer,
     navigator: CheerLotNavigator = rememberCheerLotNavigator(),
 ) {
+    // 하위 Composable은 LocalAppContainer.current로 앱 전역 의존성에 접근합니다.
     CompositionLocalProvider(LocalAppContainer provides appContainer) {
         CheerLotNavHost(navigator = navigator)
     }
