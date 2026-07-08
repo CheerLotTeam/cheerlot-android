@@ -7,6 +7,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -27,6 +30,7 @@ fun CheerLotNavHost(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    var previousStackSize by remember { mutableIntStateOf(0) }
 
     BackHandler(enabled = navigator.routeStack.isNotEmpty()) {
         navigator.popBackStack()
@@ -42,14 +46,28 @@ fun CheerLotNavHost(
                     inclusive = false,
                 )
             }
+            previousStackSize = navigator.routeStack.size
             return@LaunchedEffect
         }
 
         if (currentRoute != targetRoute) {
-            navController.navigate(targetRoute) {
-                launchSingleTop = true
+            val popped = if (navigator.routeStack.size < previousStackSize) {
+                navController.popBackStack(
+                    route = targetRoute,
+                    inclusive = false,
+                )
+            } else {
+                false
+            }
+
+            if (!popped) {
+                navController.navigate(targetRoute) {
+                    launchSingleTop = true
+                }
             }
         }
+
+        previousStackSize = navigator.routeStack.size
     }
 
     NavHost(
