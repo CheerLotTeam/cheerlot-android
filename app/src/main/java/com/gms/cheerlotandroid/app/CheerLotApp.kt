@@ -1,19 +1,30 @@
 package com.gms.cheerlotandroid.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.tooling.preview.Preview
+import com.gms.cheerlotandroid.core.di.AppContainer
+import com.gms.cheerlotandroid.core.di.LocalAppContainer
+import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
+import com.gms.cheerlotandroid.core.navigation.rememberCheerLotNavigator
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.presentation.main.MainTabView
 
 @Composable
-fun CheerLotApp() {
-    MainTabView()
+fun CheerLotApp(
+    appContainer: AppContainer,
+    navigator: CheerLotNavigator = rememberCheerLotNavigator(),
+) {
+    // 하위 Composable은 LocalAppContainer.current로 앱 전역 의존성에 접근합니다.
+    CompositionLocalProvider(LocalAppContainer provides appContainer) {
+        CheerLotNavHost(navigator = navigator)
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun CheerLotAppPreview() {
     CheerLotTheme {
-        CheerLotApp()
+        CheerLotNavHost(navigator = rememberCheerLotNavigator())
     }
 }
