@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -40,15 +43,50 @@ fun MainTabView(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            MainBottomNavigationBar(
+            MainBottomBar(
                 selectedDestination = selectedDestination,
-                onDestinationSelected = { selectedDestination = it }
+                onDestinationSelected = { selectedDestination = it },
+                miniPlayerState = MiniPlayerUiState(
+                    title = "김도영",
+                    teamInitial = "KIA",
+                    isPlaying = false
+                )
             )
         }
     ) { innerPadding ->
         MainTabContent(
             destination = selectedDestination,
             contentPadding = innerPadding
+        )
+    }
+}
+
+@Composable
+private fun MainBottomBar(
+    selectedDestination: MainTabDestination,
+    onDestinationSelected: (MainTabDestination) -> Unit,
+    miniPlayerState: MiniPlayerUiState,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.background(GrayScaleColor.GrayWhite)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(GrayScaleColor.Gray100)
+        )
+        MiniPlayerView(state = miniPlayerState)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(GrayScaleColor.Gray100)
+        )
+        MainBottomNavigationBar(
+            selectedDestination = selectedDestination,
+            onDestinationSelected = onDestinationSelected
         )
     }
 }
