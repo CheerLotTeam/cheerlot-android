@@ -32,11 +32,11 @@ import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 
 @Composable
-fun MainTabView(
+fun MainTabScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedDestination by rememberSaveable {
-        mutableStateOf(MainTabDestination.Lineup)
+        mutableStateOf(MainTabDestination.LINEUP)
     }
 
     Scaffold(
@@ -77,7 +77,7 @@ private fun MainBottomBar(
                 .height(1.dp)
                 .background(GrayScaleColor.Gray100)
         )
-        MiniPlayerView(state = miniPlayerState)
+        MiniPlayer(state = miniPlayerState)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -175,8 +175,8 @@ private fun MainTabPlaceholder(
 
 @Preview(showBackground = true)
 @Composable
-private fun MainTabViewPreview() {
+private fun MainTabScreenPreview() {
     CheerLotTheme {
-        MainTabView()
+        MainTabScreen()
     }
 }

@@ -8,7 +8,6 @@ import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
 import com.gms.cheerlotandroid.core.navigation.rememberCheerLotNavigator
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
-import com.gms.cheerlotandroid.presentation.main.MainTabView
 
 @Composable
 fun CheerLotApp(

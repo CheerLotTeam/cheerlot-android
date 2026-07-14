@@ -37,7 +37,7 @@ internal data class MiniPlayerUiState(
 )
 
 @Composable
-internal fun MiniPlayerView(
+internal fun MiniPlayer(
     state: MiniPlayerUiState,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
@@ -119,9 +119,9 @@ private fun MiniPlayerCover(
 
 @Preview(showBackground = true)
 @Composable
-private fun MiniPlayerViewPreview() {
+private fun MiniPlayerPreview() {
     CheerLotTheme {
-        MiniPlayerView(
+        MiniPlayer(
             state = MiniPlayerUiState(
                 title = "김도영",
                 teamInitial = "KIA",

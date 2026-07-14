@@ -10,15 +10,15 @@ internal enum class MainTabDestination(
     val label: String,
     val icon: ImageVector
 ) {
-    Lineup(
+    LINEUP(
         label = "라인업",
         icon = Icons.Filled.SportsBaseball
     ),
-    TeamMembers(
+    TEAM_MEMBERS(
         label = "전체선수",
         icon = Icons.Filled.Group
     ),
-    Search(
+    SEARCH(
         label = "검색",
         icon = Icons.Outlined.Search
     )
