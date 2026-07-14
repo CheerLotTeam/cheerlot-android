@@ -43,7 +43,7 @@ private enum class ApiCode(val value: String) {
     }
 }
 
-object TeamDataSource {
+object TeamCatalog {
     val teams: List<TeamInfo> = TeamCode.entries.map { it.toTeamInfo() }
 
     fun findById(teamId: TeamId): TeamInfo? {

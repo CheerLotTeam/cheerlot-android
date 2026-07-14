@@ -36,14 +36,14 @@ class AppContainer(
 val teamRepository: TeamRepository by lazy {
     TeamRepositoryImpl(
         database = database,
-        teamDataSource = TeamDataSource,
+        teamCatalog = TeamCatalog,
     )
 }
 
 2. UseCase가 필요한 경우
 
 val getSelectedTeamUseCase: GetSelectedTeamUseCase by lazy {
-    GetSelectedTeamUseCaseImpl(
+    GetSelectedTeamUseCase(
         teamRepository = teamRepository,
     )
 }
