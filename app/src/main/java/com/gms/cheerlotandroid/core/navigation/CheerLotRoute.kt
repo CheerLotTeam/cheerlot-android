@@ -6,16 +6,8 @@ import androidx.compose.material.icons.filled.SportsBaseball
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 
-// 일반 push 화면 이동에 사용하는 route입니다.
-//
-// 새 화면을 추가할 때의 기준:
-// - 설정, 약관, 상세 화면처럼 back stack에 쌓이는 화면은 CheerLotRoute에 추가합니다.
-// - 라인업/팀 멤버/검색처럼 메인 화면 내부 탭은 CheerLotMainTab에 추가합니다.
-// - Bottom Sheet로 열리는 화면은 CheerLotSheet에 추가합니다.
-// - 전체 화면 modal로 열리는 재생 화면은 CheerLotFullScreen에 추가합니다.
-//
-// argument가 없는 화면은 data object로 정의하고,
-// argument가 필요한 화면은 data class와 route pattern/createRoute 규칙을 함께 정의합니다.
+// 일반 push 화면(back stack에 쌓이는 화면)에 사용하는 route입니다.
+// 메인 탭 전환은 CheerLotMainTab, Sheet/FullScreen 화면은 각각 CheerLotSheet/CheerLotFullScreen을 사용합니다.
 sealed interface CheerLotRoute {
     val route: String
 
@@ -42,6 +34,20 @@ sealed interface CheerLotRoute {
     data object Copyright : CheerLotRoute {
         override val route: String = "copyright"
     }
+
+    companion object {
+        // rememberSaveable Saver가 저장해둔 route 문자열로부터 복원할 때 사용합니다.
+        // 인자 있는 route가 추가되면 여기에도 매칭 분기를 추가해야 합니다.
+        fun fromRoute(route: String): CheerLotRoute? = when (route) {
+            Settings.route -> Settings
+            ServiceInfo.route -> ServiceInfo
+            MakerInfo.route -> MakerInfo
+            TermsOfService.route -> TermsOfService
+            PrivacyPolicy.route -> PrivacyPolicy
+            Copyright.route -> Copyright
+            else -> null
+        }
+    }
 }
 
 enum class CheerLotMainTab(
@@ -53,48 +59,3 @@ enum class CheerLotMainTab(
     TEAM_MEMBERS("team_members", "전체선수", Icons.Filled.Group),
     SEARCH("search", "검색", Icons.Outlined.Search),
 }
-
-/*
-새 route를 추가하는 예시:
-
-1. argument가 없는 push 화면
-
-data object Notice : CheerLotRoute {
-    override val route: String = "notice"
-}
-
-추가 후 CheerLotNavHost에 연결:
-
-composable(CheerLotRoute.Notice.route) {
-    NoticeScreen(...)
-}
-
-사용:
-
-navigator.navigate(CheerLotRoute.Notice)
-
-2. argument가 있는 push 화면
-
-data class PlayerDetail(
-    val playerId: String,
-) : CheerLotRoute {
-    override val route: String = "$ROUTE/$playerId"
-
-    companion object {
-        const val ROUTE = "player_detail"
-        const val PLAYER_ID = "playerId"
-        const val PATTERN = "$ROUTE/{$PLAYER_ID}"
-    }
-}
-
-추가 후 CheerLotNavHost에 연결:
-
-composable(CheerLotRoute.PlayerDetail.PATTERN) { backStackEntry ->
-    val playerId = backStackEntry.arguments?.getString(CheerLotRoute.PlayerDetail.PLAYER_ID)
-    PlayerDetailScreen(...)
-}
-
-사용:
-
-navigator.navigate(CheerLotRoute.PlayerDetail(playerId = "1234"))
-*/
