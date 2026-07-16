@@ -1,5 +1,11 @@
 package com.gms.cheerlotandroid.core.navigation
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.SportsBaseball
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.ui.graphics.vector.ImageVector
+
 // 일반 push 화면 이동에 사용하는 route입니다.
 //
 // 새 화면을 추가할 때의 기준:
@@ -39,11 +45,13 @@ sealed interface CheerLotRoute {
 }
 
 enum class CheerLotMainTab(
-    val route: String
+    val route: String,
+    val label: String,
+    val icon: ImageVector
 ) {
-    LINEUP("lineup"),
-    TEAM_MEMBERS("team_members"),
-    SEARCH("search"),
+    LINEUP("lineup", "라인업", Icons.Filled.SportsBaseball),
+    TEAM_MEMBERS("team_members", "전체선수", Icons.Filled.Group),
+    SEARCH("search", "검색", Icons.Outlined.Search),
 }
 
 /*
