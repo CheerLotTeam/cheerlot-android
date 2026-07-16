@@ -34,19 +34,17 @@ import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 
 @Composable
 fun MainTabScreen(
+    selectedDestination: CheerLotMainTab,
+    onDestinationSelected: (CheerLotMainTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedDestination by rememberSaveable {
-        mutableStateOf(CheerLotMainTab.LINEUP)
-    }
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             MainBottomBar(
                 selectedDestination = selectedDestination,
-                onDestinationSelected = { selectedDestination = it },
+                onDestinationSelected = onDestinationSelected,
                 miniPlayerState = MiniPlayerUiState(
                     title = "김도영",
                     teamInitial = "KIA",
@@ -177,7 +175,12 @@ private fun MainTabPlaceholder(
 @Preview(showBackground = true)
 @Composable
 private fun MainTabScreenPreview() {
+    var selectedDestination by rememberSaveable { mutableStateOf(CheerLotMainTab.LINEUP) }
+
     CheerLotTheme {
-        MainTabScreen()
+        MainTabScreen(
+            selectedDestination = selectedDestination,
+            onDestinationSelected = { selectedDestination = it },
+        )
     }
 }

@@ -16,9 +16,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
 import com.gms.cheerlotandroid.core.navigation.CheerLotRoute
+import com.gms.cheerlotandroid.presentation.main.MainTabScreen
 
 private const val MAIN_ROUTE = "main"
 
@@ -98,7 +98,10 @@ fun CheerLotNavHost(
         modifier = modifier,
     ) {
         composable(MAIN_ROUTE) {
-            MainPlaceholderScreen(selectedTab = navigator.selectedTab)
+            MainTabScreen(
+                selectedDestination = navigator.selectedTab,
+                onDestinationSelected = navigator::selectTab,
+            )
         }
         composable(CheerLotRoute.Settings.route) {
             PlaceholderScreen(title = "Settings")
@@ -119,14 +122,6 @@ fun CheerLotNavHost(
             PlaceholderScreen(title = "Copyright")
         }
     }
-}
-
-// 임시뷰
-@Composable
-private fun MainPlaceholderScreen(
-    selectedTab: CheerLotMainTab,
-) {
-    PlaceholderScreen(title = "Main / ${selectedTab.route}")
 }
 
 // 임시뷰
