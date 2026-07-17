@@ -26,26 +26,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.color.semantic.CheerLotColor
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 
 @Composable
-fun MainTabView(
+fun MainTabScreen(
+    selectedDestination: CheerLotMainTab,
+    onDestinationSelected: (CheerLotMainTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedDestination by rememberSaveable {
-        mutableStateOf(MainTabDestination.Lineup)
-    }
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             MainBottomBar(
                 selectedDestination = selectedDestination,
-                onDestinationSelected = { selectedDestination = it },
+                onDestinationSelected = onDestinationSelected,
                 miniPlayerState = MiniPlayerUiState(
                     title = "김도영",
                     teamInitial = "KIA",
@@ -63,8 +62,8 @@ fun MainTabView(
 
 @Composable
 private fun MainBottomBar(
-    selectedDestination: MainTabDestination,
-    onDestinationSelected: (MainTabDestination) -> Unit,
+    selectedDestination: CheerLotMainTab,
+    onDestinationSelected: (CheerLotMainTab) -> Unit,
     miniPlayerState: MiniPlayerUiState,
     modifier: Modifier = Modifier
 ) {
@@ -77,7 +76,7 @@ private fun MainBottomBar(
                 .height(1.dp)
                 .background(GrayScaleColor.Gray100)
         )
-        MiniPlayerView(state = miniPlayerState)
+        MiniPlayer(state = miniPlayerState)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -93,8 +92,8 @@ private fun MainBottomBar(
 
 @Composable
 private fun MainBottomNavigationBar(
-    selectedDestination: MainTabDestination,
-    onDestinationSelected: (MainTabDestination) -> Unit,
+    selectedDestination: CheerLotMainTab,
+    onDestinationSelected: (CheerLotMainTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
@@ -102,7 +101,7 @@ private fun MainBottomNavigationBar(
         containerColor = GrayScaleColor.GrayWhite,
         tonalElevation = 0.dp
     ) {
-        MainTabDestination.entries.forEach { destination ->
+        CheerLotMainTab.entries.forEach { destination ->
             val selected = destination == selectedDestination
 
             NavigationBarItem(
@@ -134,7 +133,7 @@ private fun MainBottomNavigationBar(
 
 @Composable
 private fun MainTabContent(
-    destination: MainTabDestination,
+    destination: CheerLotMainTab,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
@@ -150,7 +149,7 @@ private fun MainTabContent(
 
 @Composable
 private fun MainTabPlaceholder(
-    destination: MainTabDestination,
+    destination: CheerLotMainTab,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -175,8 +174,13 @@ private fun MainTabPlaceholder(
 
 @Preview(showBackground = true)
 @Composable
-private fun MainTabViewPreview() {
+private fun MainTabScreenPreview() {
+    var selectedDestination by rememberSaveable { mutableStateOf(CheerLotMainTab.LINEUP) }
+
     CheerLotTheme {
-        MainTabView()
+        MainTabScreen(
+            selectedDestination = selectedDestination,
+            onDestinationSelected = { selectedDestination = it },
+        )
     }
 }

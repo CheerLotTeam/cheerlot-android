@@ -2,8 +2,25 @@ package com.gms.cheerlotandroid.core.di
 
 import android.content.Context
 import androidx.room.Room
+import com.gms.cheerlotandroid.data.network.NetworkModule
+import com.gms.cheerlotandroid.data.repository.PlayerRepositoryImpl
+import com.gms.cheerlotandroid.data.repository.TeamRepositoryImpl
+import com.gms.cheerlotandroid.data.repository.TeamSelectionRepositoryImpl
+import com.gms.cheerlotandroid.data.source.TeamCatalog
+import com.gms.cheerlotandroid.data.storage.datastore.teamSelectionDataStore
 import com.gms.cheerlotandroid.data.storage.local.CheerLotDatabase
 import com.gms.cheerlotandroid.data.storage.local.CheerLotDatabaseMigrations
+import com.gms.cheerlotandroid.domain.repository.PlayerRepository
+import com.gms.cheerlotandroid.domain.repository.TeamRepository
+import com.gms.cheerlotandroid.domain.repository.TeamSelectionRepository
+import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
+import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
+import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
+import com.gms.cheerlotandroid.domain.usecase.player.GetPlayerDetailUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.GetTeamGameScheduleUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.HasSelectedTeamUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.UpdateSelectedTeamUseCase
 
 // 앱 전역 의존성은 AppContainer에서 한 번 생성하고 필요한 계층으로 전달합니다.
 class AppContainer(
@@ -22,42 +39,67 @@ class AppContainer(
             .build()
     }
 
+    private val networkModule: NetworkModule by lazy { NetworkModule() }
+
+    val teamRepository: TeamRepository by lazy {
+        TeamRepositoryImpl(
+            teamDao = database.teamDao(),
+            teamApiService = networkModule.teamApiService,
+            teamCatalog = TeamCatalog,
+        )
+    }
+
+    val playerRepository: PlayerRepository by lazy {
+        PlayerRepositoryImpl(
+            database = database,
+            playerDao = database.playerDao(),
+            cheerSongDao = database.cheerSongDao(),
+            playerApiService = networkModule.playerApiService,
+            teamRepository = teamRepository,
+            teamCatalog = TeamCatalog,
+        )
+    }
+
+    val teamSelectionRepository: TeamSelectionRepository by lazy {
+        TeamSelectionRepositoryImpl(
+            dataStore = appContext.teamSelectionDataStore,
+        )
+    }
+
+    val getLineupUseCase: GetLineupUseCase by lazy {
+        GetLineupUseCase(playerRepository = playerRepository)
+    }
+
+    val getAllPlayersUseCase: GetAllPlayersUseCase by lazy {
+        GetAllPlayersUseCase(playerRepository = playerRepository)
+    }
+
+    val getPlayerDetailUseCase: GetPlayerDetailUseCase by lazy {
+        GetPlayerDetailUseCase(playerRepository = playerRepository)
+    }
+
+    val getLineupGameInfoUseCase: GetLineupGameInfoUseCase by lazy {
+        GetLineupGameInfoUseCase(teamRepository = teamRepository)
+    }
+
+    val getTeamGameScheduleUseCase: GetTeamGameScheduleUseCase by lazy {
+        GetTeamGameScheduleUseCase(teamRepository = teamRepository)
+    }
+
+    val getSelectedTeamUseCase: GetSelectedTeamUseCase by lazy {
+        GetSelectedTeamUseCase(teamSelectionRepository = teamSelectionRepository)
+    }
+
+    val updateSelectedTeamUseCase: UpdateSelectedTeamUseCase by lazy {
+        UpdateSelectedTeamUseCase(teamSelectionRepository = teamSelectionRepository)
+    }
+
+    val hasSelectedTeamUseCase: HasSelectedTeamUseCase by lazy {
+        HasSelectedTeamUseCase(teamSelectionRepository = teamSelectionRepository)
+    }
+
     // ViewModel 인스턴스는 Android ViewModelStore가 관리하고, Factory는 생성 방법만 제공합니다.
     val viewModelFactory: CheerLotViewModelFactory by lazy {
         CheerLotViewModelFactory(this)
     }
 }
-
-/*
-새 의존성을 추가하는 예시:
-
-1. RepositoryImpl이 필요한 경우
-
-val teamRepository: TeamRepository by lazy {
-    TeamRepositoryImpl(
-        database = database,
-        teamDataSource = TeamDataSource,
-    )
-}
-
-2. UseCase가 필요한 경우
-
-val getSelectedTeamUseCase: GetSelectedTeamUseCase by lazy {
-    GetSelectedTeamUseCaseImpl(
-        teamRepository = teamRepository,
-    )
-}
-
-3. Service가 필요한 경우
-
-val playbackService: PlaybackService by lazy {
-    PlaybackServiceImpl(
-        context = appContext,
-    )
-}
-
-원칙:
-- DataSource, RepositoryImpl, UseCase, Service 생성 위치는 AppContainer로 모읍니다.
-- ViewModel이나 Composable에서 RepositoryImpl, Database, Service를 직접 생성하지 않습니다.
-- 실제 ViewModel 생성은 viewModelFactory에서 처리합니다.
-*/

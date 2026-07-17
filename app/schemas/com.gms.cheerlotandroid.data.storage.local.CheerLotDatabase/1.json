@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "1417766ab46024d7a3f8d63ad56d1aa3",
+    "identityHash": "7cd4c3f4aefc1ab63a3684a10fccff7b",
     "entities": [
       {
         "tableName": "teams",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`team_id` TEXT NOT NULL, `has_today_game` INTEGER NOT NULL, `opponent_team_id` TEXT, `starter_pitcher_name` TEXT, `last_game_date` TEXT, `lineup_updated_today` INTEGER NOT NULL, `is_season_ended` INTEGER NOT NULL, `lineup_version` INTEGER NOT NULL, `players_version` INTEGER NOT NULL, PRIMARY KEY(`team_id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`team_id` TEXT NOT NULL, `has_today_game` INTEGER NOT NULL, `opponent_team_id` TEXT, `starter_pitcher_name` TEXT, `last_game_date` TEXT, `lineup_updated_today` INTEGER NOT NULL, `is_season_ended` INTEGER NOT NULL, `is_home` INTEGER, `recent_games` TEXT NOT NULL, `lineup_version` INTEGER NOT NULL, `players_version` INTEGER NOT NULL, PRIMARY KEY(`team_id`))",
         "fields": [
           {
             "fieldPath": "teamId",
@@ -45,6 +45,17 @@
             "fieldPath": "isSeasonEnded",
             "columnName": "is_season_ended",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isHome",
+            "columnName": "is_home",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "recentGames",
+            "columnName": "recent_games",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -213,7 +224,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1417766ab46024d7a3f8d63ad56d1aa3')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7cd4c3f4aefc1ab63a3684a10fccff7b')"
     ]
   }
 }

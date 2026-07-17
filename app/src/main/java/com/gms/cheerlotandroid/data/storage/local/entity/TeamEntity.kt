@@ -21,6 +21,12 @@ data class TeamEntity(
     val lineupUpdatedToday: Boolean = false,
     @ColumnInfo(name = "is_season_ended")
     val isSeasonEnded: Boolean = false,
+    // 라인업이 마지막으로 확정됐을 때(refreshGameInfo 시점)의 스케줄 기준 홈/원정 여부 스냅샷입니다.
+    // recentGames는 매일 갱신되지만 이 값은 게임정보가 갱신될 때만 같이 저장됩니다.
+    @ColumnInfo(name = "is_home")
+    val isHome: Boolean? = null,
+    @ColumnInfo(name = "recent_games")
+    val recentGames: List<TeamRecentGameLocalDto> = emptyList(),
     @ColumnInfo(name = "lineup_version")
     val lineupVersion: Int = -1,
     @ColumnInfo(name = "players_version")

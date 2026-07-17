@@ -1,4 +1,4 @@
-package com.gms.cheerlotandroid.app
+package com.gms.cheerlotandroid.app.host
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
@@ -16,22 +16,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
 import com.gms.cheerlotandroid.core.navigation.CheerLotRoute
+import com.gms.cheerlotandroid.presentation.main.MainTabScreen
 
 private const val MAIN_ROUTE = "main"
 
 // 앱의 실제 화면 route를 Navigation Compose에 연결하는 root NavHost입니다.
-//
-// 새 push 화면을 추가할 때의 순서:
-// 1. core/navigation/CheerLotRoute.kt에 route 타입을 추가합니다.
-// 2. 아래 NavHost builder에 composable(route.route) 블록을 추가합니다.
-// 3. 화면 이동이 필요한 곳에서는 navController를 직접 쓰지 않고 navigator.navigate(route)를 호출합니다.
-// 4. argument가 있는 화면은 route pattern과 createRoute 규칙을 route 타입에 함께 정의합니다.
-//
-// Sheet, Dialog, FullScreen은 여기서 바로 처리하지 않고 navigator 상태로 분리해 둡니다.
-// 실제 modal UI 연결은 팀 변경, 재생 화면 등 구체 화면이 생길 때 root ModalHost로 추가합니다.
 @Composable
 fun CheerLotNavHost(
     navigator: CheerLotNavigator,
@@ -48,8 +39,19 @@ fun CheerLotNavHost(
     var previousStackSize by remember { mutableIntStateOf(0) }
 
     // Android 시스템 뒤로가기도 Navigator를 통해 처리해 routeStack과 NavController가 어긋나지 않게 합니다.
-    BackHandler(enabled = navigator.routeStack.isNotEmpty()) {
-        navigator.popBackStack()
+    // modal(Dialog/FullScreen/Sheet)이 떠 있으면 routeStack보다 먼저 닫습니다
+    val hasDialog = navigator.currentDialog != null
+    val hasFullScreen = navigator.currentFullScreen != null
+    val hasSheet = navigator.currentSheet != null
+    BackHandler(
+        enabled = hasDialog || hasFullScreen || hasSheet || navigator.routeStack.isNotEmpty(),
+    ) {
+        when {
+            hasDialog -> navigator.dismissDialog()
+            hasFullScreen -> navigator.dismissFullScreen()
+            hasSheet -> navigator.dismissSheet()
+            else -> navigator.popBackStack()
+        }
     }
 
     // Navigator 상태가 바뀌면 실제 NavController 동작으로 반영합니다.
@@ -96,7 +98,10 @@ fun CheerLotNavHost(
         modifier = modifier,
     ) {
         composable(MAIN_ROUTE) {
-            MainPlaceholderScreen(selectedTab = navigator.selectedTab)
+            MainTabScreen(
+                selectedDestination = navigator.selectedTab,
+                onDestinationSelected = navigator::selectTab,
+            )
         }
         composable(CheerLotRoute.Settings.route) {
             PlaceholderScreen(title = "Settings")
@@ -119,13 +124,7 @@ fun CheerLotNavHost(
     }
 }
 
-@Composable
-private fun MainPlaceholderScreen(
-    selectedTab: CheerLotMainTab,
-) {
-    PlaceholderScreen(title = "Main / ${selectedTab.route}")
-}
-
+// 임시뷰
 @Composable
 private fun PlaceholderScreen(
     title: String,
