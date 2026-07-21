@@ -3,8 +3,7 @@ package com.gms.cheerlotandroid.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.tooling.preview.Preview
-import com.gms.cheerlotandroid.app.host.CheerLotDialogHost
-import com.gms.cheerlotandroid.app.host.CheerLotModalHost
+import com.gms.cheerlotandroid.app.host.AppFlowRoot
 import com.gms.cheerlotandroid.app.host.CheerLotNavHost
 import com.gms.cheerlotandroid.core.di.AppContainer
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
@@ -19,9 +18,7 @@ fun CheerLotApp(
 ) {
     // 하위 Composable은 LocalAppContainer.current로 앱 전역 의존성에 접근합니다.
     CompositionLocalProvider(LocalAppContainer provides appContainer) {
-        CheerLotNavHost(navigator = navigator)
-        CheerLotDialogHost(navigator = navigator)
-        CheerLotModalHost(navigator = navigator)
+        AppFlowRoot(navigator = navigator)
     }
 }
 
