@@ -13,6 +13,7 @@ import com.gms.cheerlotandroid.data.storage.local.entity.TeamEntity
 import com.gms.cheerlotandroid.domain.model.team.GameScheduleInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamGameInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
+import com.gms.cheerlotandroid.domain.model.team.TeamInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamVersionInfo
 import com.gms.cheerlotandroid.domain.repository.TeamRepository
 import java.time.LocalDate
@@ -25,6 +26,10 @@ class TeamRepositoryImpl(
     private val teamApiService: TeamApiService,
     private val teamCatalog: TeamCatalog = TeamCatalog
 ) : TeamRepository {
+
+    override fun getAllTeams(): List<TeamInfo> {
+        return teamCatalog.teams
+    }
 
     override suspend fun getLocalVersions(teamId: TeamId): TeamVersionInfo? {
         return teamDao.getTeam(teamId.value)?.toVersionInfo()
