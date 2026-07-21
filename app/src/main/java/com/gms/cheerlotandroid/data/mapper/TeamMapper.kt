@@ -29,35 +29,38 @@ internal fun TeamEntity.toVersionInfo(): TeamVersionInfo {
     )
 }
 
-internal fun TeamGameDto.toDomain(teamId: TeamId): TeamGameInfo {
-    val status = when {
+// isSeasonEnded/hasTodayGame/lineupUpdatedToday는 전부 서버가 주는 원본 사실이라,
+// 이걸 조합한 LINEUP_PENDING도 클라이언트가 지어낸 상태가 아니라 서버 사실의 재조합입니다.
+private fun resolveGameStatus(
+    isSeasonEnded: Boolean,
+    hasTodayGame: Boolean,
+    lineupUpdatedToday: Boolean
+): GameStatus {
+    return when {
         isSeasonEnded -> GameStatus.SEASON_ENDED
-        hasTodayGame -> GameStatus.PLAYING_TODAY
+        hasTodayGame && lineupUpdatedToday -> GameStatus.PLAYING_TODAY
+        hasTodayGame -> GameStatus.LINEUP_PENDING
         else -> GameStatus.OFF_DAY
     }
+}
+
+internal fun TeamGameDto.toDomain(teamId: TeamId): TeamGameInfo {
     return TeamGameInfo(
         teamId = teamId,
-        status = status,
+        status = resolveGameStatus(isSeasonEnded, hasTodayGame, lineupUpdatedToday),
         opponentTeamId = opponentTeamCode?.let { TeamCatalog.findByApiCode(it)?.id },
         starterPitcherName = starterPitcherName,
-        lastGameDate = lastGameDate,
-        lineupUpdatedToday = lineupUpdatedToday
+        lastGameDate = lastGameDate
     )
 }
 
 internal fun TeamEntity.toGameInfo(): TeamGameInfo {
-    val status = when {
-        isSeasonEnded -> GameStatus.SEASON_ENDED
-        hasTodayGame -> GameStatus.PLAYING_TODAY
-        else -> GameStatus.OFF_DAY
-    }
     return TeamGameInfo(
         teamId = TeamId(teamId),
-        status = status,
+        status = resolveGameStatus(isSeasonEnded, hasTodayGame, lineupUpdatedToday),
         opponentTeamId = opponentTeamId?.let { TeamId(it) },
         starterPitcherName = starterPitcherName,
         lastGameDate = lastGameDate,
-        lineupUpdatedToday = lineupUpdatedToday,
         isHome = isHome
     )
 }
