@@ -64,13 +64,6 @@ val devBackendHost = localProperties.getProperty("API_BASE_URL", "")
     .substringBefore("/")
     .substringBefore(":")
 
-val generateNetworkSecurityConfig = tasks.register<GenerateNetworkSecurityConfig>(
-    "generateNetworkSecurityConfig"
-) {
-    backendHost.set(devBackendHost)
-    outputDir.set(layout.buildDirectory.dir("generated/networkSecurityConfig/res"))
-}
-
 android {
     namespace = "com.gms.cheerlotandroid"
     compileSdk {
@@ -113,9 +106,17 @@ android {
 }
 
 androidComponents {
+    // 변형(variant)마다 독립된 태스크 인스턴스를 등록합니다. 태스크 하나를 여러 변형이
+    // 공유하면 출력 디렉토리 배선이 변형별로 꼬일 수 있어, 변형별 이름/출력 경로를 분리합니다.
     onVariants { variant ->
+        val variantTaskName = "generate${variant.name.replaceFirstChar { it.uppercase() }}NetworkSecurityConfig"
+        val generateTask = tasks.register<GenerateNetworkSecurityConfig>(variantTaskName) {
+            backendHost.set(devBackendHost)
+            outputDir.set(layout.buildDirectory.dir("generated/networkSecurityConfig/${variant.name}/res"))
+        }
+
         variant.sources.res?.addGeneratedSourceDirectory(
-            generateNetworkSecurityConfig,
+            generateTask,
             GenerateNetworkSecurityConfig::outputDir
         )
     }
