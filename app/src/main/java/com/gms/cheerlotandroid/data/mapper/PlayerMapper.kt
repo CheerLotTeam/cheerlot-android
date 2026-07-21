@@ -23,10 +23,10 @@ internal fun StarterDto.toPlayerEntity(teamId: TeamId): PlayerEntity {
     )
 }
 
-internal fun PlayerDto.toPlayerEntity(): PlayerEntity {
+internal fun PlayerDto.toPlayerEntity(teamId: TeamId): PlayerEntity {
     return PlayerEntity(
         playerId = playerCode,
-        teamId = teamCode,
+        teamId = teamId.value,
         name = name,
         backNumber = backNumber,
         position = position ?: DEFAULT_POSITION,

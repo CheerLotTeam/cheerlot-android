@@ -37,4 +37,7 @@ interface TeamRepository {
 
     // 캐시된 스케줄의 첫 경기 날짜가 오늘이 아닐 때만(또는 forceRefresh=true) 서버에서 불러 저장합니다.
     suspend fun syncGameSchedule(teamId: TeamId, forceRefresh: Boolean = false): List<GameScheduleInfo>
+
+    // teams row가 없으면 만들어서, 이 팀을 FK로 참조하는 다른 테이블(players 등) 쓰기가 항상 성공하게 보장합니다.
+    suspend fun ensureTeamRow(teamId: TeamId)
 }

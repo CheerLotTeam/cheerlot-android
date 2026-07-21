@@ -65,10 +65,13 @@ class PlayerRepositoryImpl(
         if (!forceRefresh && !teamRepository.isPlayersSyncNeeded(local, remote)) return
 
         val dto = safeApiCall { playerApiService.getAllPlayers(teamCatalog.toApiCode(teamId)) }
-        val playerEntities = dto.players.map { it.toPlayerEntity() }
+        val playerEntities = dto.players.map { it.toPlayerEntity(teamId) }
         val cheerSongEntities = dto.players.flatMap { player ->
             player.cheerSongs.map { it.toEntity(player.playerCode) }
         }
+
+        // players가 team_id를 FK로 참조하므로, insert 전에 teams row 존재를 먼저 보장합니다.
+        teamRepository.ensureTeamRow(teamId)
 
         // 전체 로스터 응답은 완전한 팀 구성을 담고 있으므로 통째로 교체해도 안전합니다.
         database.withTransaction {
