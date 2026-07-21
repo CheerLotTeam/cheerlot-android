@@ -16,6 +16,7 @@ okhttp = "4.12.0"
 kotlinxSerializationJson = "1.7.3"
 kotlinxCoroutines = "1.9.0"
 datastorePreferences = "1.1.1"
+lottieCompose = "6.6.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -45,6 +46,7 @@ okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-i
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottieCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
