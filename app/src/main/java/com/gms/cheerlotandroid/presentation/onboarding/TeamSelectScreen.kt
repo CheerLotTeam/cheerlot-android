@@ -23,6 +23,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.component.TeamGrid
@@ -35,10 +37,23 @@ import com.gms.cheerlotandroid.domain.model.team.TeamInfo
 @Composable
 fun TeamSelectScreen(
     modifier: Modifier = Modifier,
+    mode: TeamSelectMode,
     onComplete: () -> Unit,
-    onClose: () -> Unit = {},
-    viewModel: TeamSelectViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
+    onClose: () -> Unit = {}
 ) {
+    val appContainer = LocalAppContainer.current
+    val viewModel: TeamSelectViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer {
+                TeamSelectViewModel(
+                    getAllTeamsUseCase = appContainer.getAllTeamsUseCase,
+                    getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    updateSelectedTeamUseCase = appContainer.updateSelectedTeamUseCase,
+                    mode = mode
+                )
+            }
+        }
+    )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     TeamSelectContent(
