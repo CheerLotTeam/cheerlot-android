@@ -3,10 +3,17 @@ package com.gms.cheerlotandroid.domain.repository
 import com.gms.cheerlotandroid.domain.model.team.GameScheduleInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamGameInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
+import com.gms.cheerlotandroid.domain.model.team.TeamInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamVersionInfo
 import kotlinx.coroutines.flow.Flow
 
 interface TeamRepository {
+    // 전체 팀을 모두 반환합니다.
+    fun getAllTeams(): List<TeamInfo>
+
+    // teams row가 없으면 만들어서, team_id를 참조하는 FK가 걸린 테이블에 안전하게 insert할 수 있게 보장합니다.
+    suspend fun ensureTeamRow(teamId: TeamId)
+
     // 로컬에 저장된 버전 스냅샷. 팀 row가 없으면 null.
     suspend fun getLocalVersions(teamId: TeamId): TeamVersionInfo?
 
@@ -37,7 +44,4 @@ interface TeamRepository {
 
     // 캐시된 스케줄의 첫 경기 날짜가 오늘이 아닐 때만(또는 forceRefresh=true) 서버에서 불러 저장합니다.
     suspend fun syncGameSchedule(teamId: TeamId, forceRefresh: Boolean = false): List<GameScheduleInfo>
-
-    // teams row가 없으면 만들어서, 이 팀을 FK로 참조하는 다른 테이블(players 등) 쓰기가 항상 성공하게 보장합니다.
-    suspend fun ensureTeamRow(teamId: TeamId)
 }

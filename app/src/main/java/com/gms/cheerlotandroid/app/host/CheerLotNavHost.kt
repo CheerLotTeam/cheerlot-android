@@ -20,7 +20,7 @@ import com.gms.cheerlotandroid.core.navigation.CheerLotFullScreen
 import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
 import com.gms.cheerlotandroid.core.navigation.CheerLotRoute
 import com.gms.cheerlotandroid.core.navigation.PlaybackSource
-import com.gms.cheerlotandroid.presentation.main.MainTabScreen
+import com.gms.cheerlotandroid.presentation.main.MainScreen
 
 private const val MAIN_ROUTE = "main"
 
@@ -100,7 +100,7 @@ fun CheerLotNavHost(
         modifier = modifier,
     ) {
         composable(MAIN_ROUTE) {
-            MainTabScreen(
+            MainScreen(
                 selectedDestination = navigator.selectedTab,
                 onDestinationSelected = navigator::selectTab,
                 onOpenBasePlayback = { teamId, cheerSongId, playerName ->

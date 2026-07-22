@@ -24,24 +24,52 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.color.semantic.CheerLotColor
+import com.gms.cheerlotandroid.design.team.TeamAsset
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 
 @Composable
-fun MainTabScreen(
+fun MainScreen(
     selectedDestination: CheerLotMainTab,
     onDestinationSelected: (CheerLotMainTab) -> Unit,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
     onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
+    modifier: Modifier = Modifier,
+    viewModel: MainViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // 팀 미선택 상태는 이 화면에 정상적으로 진입할 수 없는 조건이지만, 방어적으로 앱 기본 색을 fallback합니다.
+    val tabColor = uiState.selectedTeamId?.let { TeamAsset.from(it).secondaryColor }
+        ?: CheerLotColor.AppSecondary
+
+    MainContent(
+        selectedDestination = selectedDestination,
+        onDestinationSelected = onDestinationSelected,
+        tabColor = tabColor,
+        onOpenBasePlayback = onOpenBasePlayback,
+        onOpenLineupPlayback = onOpenLineupPlayback,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun MainContent(
+    selectedDestination: CheerLotMainTab,
+    onDestinationSelected: (CheerLotMainTab) -> Unit,
+    tabColor: Color,
+    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
+    onOpenLineupPlayback: (startIndex: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val miniPlayerViewModel: MiniPlayerViewModel =
@@ -55,6 +83,7 @@ fun MainTabScreen(
             MainBottomBar(
                 selectedDestination = selectedDestination,
                 onDestinationSelected = onDestinationSelected,
+                tabColor = tabColor,
                 miniPlayerState = miniPlayerState,
                 onMiniPlayerClick = {
                     when (val target = miniPlayerViewModel.reopenTarget()) {
@@ -84,6 +113,7 @@ fun MainTabScreen(
 private fun MainBottomBar(
     selectedDestination: CheerLotMainTab,
     onDestinationSelected: (CheerLotMainTab) -> Unit,
+    tabColor: Color,
     miniPlayerState: MiniPlayerUiState?,
     onMiniPlayerClick: () -> Unit,
     onMiniPlayerPlayClick: () -> Unit,
@@ -115,7 +145,8 @@ private fun MainBottomBar(
         )
         MainBottomNavigationBar(
             selectedDestination = selectedDestination,
-            onDestinationSelected = onDestinationSelected
+            onDestinationSelected = onDestinationSelected,
+            tabColor = tabColor
         )
     }
 }
@@ -124,6 +155,7 @@ private fun MainBottomBar(
 private fun MainBottomNavigationBar(
     selectedDestination: CheerLotMainTab,
     onDestinationSelected: (CheerLotMainTab) -> Unit,
+    tabColor: Color,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
@@ -150,11 +182,11 @@ private fun MainBottomNavigationBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = CheerLotColor.AppSecondary,
-                    selectedTextColor = CheerLotColor.AppSecondary,
-                    indicatorColor = CheerLotColor.AppSecondary.copy(alpha = 0.12f),
-                    unselectedIconColor = GrayScaleColor.Gray400,
-                    unselectedTextColor = GrayScaleColor.Gray400
+                    selectedIconColor = tabColor,
+                    selectedTextColor = tabColor,
+                    indicatorColor = tabColor.copy(alpha = 0.12f),
+                    unselectedIconColor = GrayScaleColor.Gray300,
+                    unselectedTextColor = GrayScaleColor.Gray300
                 )
             )
         }
@@ -226,13 +258,14 @@ private fun MainTabPlaceholder(
 // DI 없이도 그릴 수 있는 MainBottomBar만 목업 상태로 미리보기합니다.
 @Preview(showBackground = true)
 @Composable
-private fun MainTabScreenPreview() {
+private fun MainContentPreview() {
     var selectedDestination by rememberSaveable { mutableStateOf(CheerLotMainTab.LINEUP) }
 
     CheerLotTheme {
         MainBottomBar(
             selectedDestination = selectedDestination,
             onDestinationSelected = { selectedDestination = it },
+            tabColor = TeamAsset.from(TeamId("LOTTE")).secondaryColor,
             miniPlayerState = MiniPlayerUiState(
                 title = "김도영 · 최강 도영",
                 teamInitial = "KIA",
