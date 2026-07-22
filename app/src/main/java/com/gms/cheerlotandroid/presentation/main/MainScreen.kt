@@ -17,6 +17,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,8 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 fun MainScreen(
     selectedDestination: CheerLotMainTab,
     onDestinationSelected: (CheerLotMainTab) -> Unit,
+    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
+    onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
 ) {
@@ -54,6 +57,8 @@ fun MainScreen(
         selectedDestination = selectedDestination,
         onDestinationSelected = onDestinationSelected,
         tabColor = tabColor,
+        onOpenBasePlayback = onOpenBasePlayback,
+        onOpenLineupPlayback = onOpenLineupPlayback,
         modifier = modifier
     )
 }
@@ -63,8 +68,14 @@ private fun MainContent(
     selectedDestination: CheerLotMainTab,
     onDestinationSelected: (CheerLotMainTab) -> Unit,
     tabColor: Color,
+    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
+    onOpenLineupPlayback: (startIndex: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val miniPlayerViewModel: MiniPlayerViewModel =
+        viewModel(factory = LocalAppContainer.current.viewModelFactory)
+    val miniPlayerState by miniPlayerViewModel.uiState.collectAsState()
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -73,17 +84,27 @@ private fun MainContent(
                 selectedDestination = selectedDestination,
                 onDestinationSelected = onDestinationSelected,
                 tabColor = tabColor,
-                miniPlayerState = MiniPlayerUiState(
-                    title = "김도영",
-                    teamInitial = "KIA",
-                    isPlaying = false
-                )
+                miniPlayerState = miniPlayerState,
+                onMiniPlayerClick = {
+                    when (val target = miniPlayerViewModel.reopenTarget()) {
+                        is MiniPlayerReopenTarget.Base ->
+                            onOpenBasePlayback(target.teamId, target.cheerSongId, target.playerName)
+
+                        is MiniPlayerReopenTarget.Lineup ->
+                            onOpenLineupPlayback(target.startIndex)
+
+                        null -> Unit
+                    }
+                },
+                onMiniPlayerPlayClick = miniPlayerViewModel::onPlayClick,
+                onMiniPlayerSkipNextClick = miniPlayerViewModel::onSkipNextClick
             )
         }
     ) { innerPadding ->
         MainTabContent(
             destination = selectedDestination,
-            contentPadding = innerPadding
+            contentPadding = innerPadding,
+            onOpenBasePlayback = onOpenBasePlayback
         )
     }
 }
@@ -93,19 +114,29 @@ private fun MainBottomBar(
     selectedDestination: CheerLotMainTab,
     onDestinationSelected: (CheerLotMainTab) -> Unit,
     tabColor: Color,
-    miniPlayerState: MiniPlayerUiState,
+    miniPlayerState: MiniPlayerUiState?,
+    onMiniPlayerClick: () -> Unit,
+    onMiniPlayerPlayClick: () -> Unit,
+    onMiniPlayerSkipNextClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.background(GrayScaleColor.GrayWhite)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(GrayScaleColor.Gray100)
-        )
-        MiniPlayer(state = miniPlayerState)
+        if (miniPlayerState != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(GrayScaleColor.Gray100)
+            )
+            MiniPlayer(
+                state = miniPlayerState,
+                onClick = onMiniPlayerClick,
+                onPlayClick = onMiniPlayerPlayClick,
+                onSkipNextClick = onMiniPlayerSkipNextClick
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -166,6 +197,7 @@ private fun MainBottomNavigationBar(
 private fun MainTabContent(
     destination: CheerLotMainTab,
     contentPadding: PaddingValues,
+    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -174,7 +206,26 @@ private fun MainTabContent(
             .padding(contentPadding),
         contentAlignment = Alignment.Center
     ) {
-        MainTabPlaceholder(destination = destination)
+        if (destination == CheerLotMainTab.TEAM_MEMBERS) {
+            val viewModel: TeamMembersTestViewModel =
+                viewModel(factory = LocalAppContainer.current.viewModelFactory)
+            val uiState by viewModel.uiState.collectAsState()
+
+            TeamMembersTestScreen(
+                state = uiState,
+                onSelectTestTeam = viewModel::selectTeamForTesting,
+                onRowClick = { index ->
+                    val row = uiState.rows.getOrNull(index)
+                    val teamId = uiState.teamId
+                    viewModel.onRowClick(index)
+                    if (row != null && teamId != null) {
+                        onOpenBasePlayback(teamId, row.song.id, row.playerName)
+                    }
+                }
+            )
+        } else {
+            MainTabPlaceholder(destination = destination)
+        }
     }
 }
 
@@ -203,16 +254,26 @@ private fun MainTabPlaceholder(
     }
 }
 
+// MainTabScreen 전체는 LocalAppContainer(DI)가 필요해 프리뷰에서 크래시나므로,
+// DI 없이도 그릴 수 있는 MainBottomBar만 목업 상태로 미리보기합니다.
 @Preview(showBackground = true)
 @Composable
 private fun MainContentPreview() {
     var selectedDestination by rememberSaveable { mutableStateOf(CheerLotMainTab.LINEUP) }
 
     CheerLotTheme {
-        MainContent(
+        MainBottomBar(
             selectedDestination = selectedDestination,
             onDestinationSelected = { selectedDestination = it },
-            tabColor = TeamAsset.from(TeamId("LOTTE")).secondaryColor
+            tabColor = TeamAsset.from(TeamId("LOTTE")).secondaryColor,
+            miniPlayerState = MiniPlayerUiState(
+                title = "김도영 · 최강 도영",
+                teamInitial = "KIA",
+                isPlaying = false
+            ),
+            onMiniPlayerClick = {},
+            onMiniPlayerPlayClick = {},
+            onMiniPlayerSkipNextClick = {}
         )
     }
 }

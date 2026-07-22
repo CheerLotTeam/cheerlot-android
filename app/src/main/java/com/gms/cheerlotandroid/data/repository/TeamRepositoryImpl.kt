@@ -102,6 +102,7 @@ class TeamRepositoryImpl(
         return localDtos.toDomainList()
     }
 
+    // teams row가 없으면 만들어서 FK 없이도 UPDATE가 항상 성공하게 보장
     override suspend fun ensureTeamRow(teamId: TeamId) {
         teamDao.insertIfAbsent(TeamEntity(teamId = teamId.value))
     }

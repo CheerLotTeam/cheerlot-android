@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.gms.cheerlotandroid.presentation.appflow.AppFlowViewModel
 import com.gms.cheerlotandroid.presentation.main.MainViewModel
+import com.gms.cheerlotandroid.presentation.main.MiniPlayerViewModel
+import com.gms.cheerlotandroid.presentation.main.TeamMembersTestViewModel
+import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
 
 // 화면별 ViewModel 생성 규칙을 한 곳에 모아두는 Factory입니다.
 // 인스턴스 자체는 보관하지 않고 생성 방법만 제공하며, 생명주기는 ViewModelStore가 관리합니다.
@@ -26,6 +29,29 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(MainViewModel::class.java) -> {
                 MainViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                ) as T
+            }
+
+            modelClass.isAssignableFrom(MiniPlayerViewModel::class.java) -> {
+                MiniPlayerViewModel(
+                    audioPlayer = appContainer.audioPlayer,
+                ) as T
+            }
+
+            modelClass.isAssignableFrom(PlaybackViewModel::class.java) -> {
+                PlaybackViewModel(
+                    audioPlayer = appContainer.audioPlayer,
+                ) as T
+            }
+
+            // LineupPlaybackViewModel: 라인업 UI를 넘겨받은 뒤 연결 예정 (보류)
+
+            modelClass.isAssignableFrom(TeamMembersTestViewModel::class.java) -> {
+                TeamMembersTestViewModel(
+                    getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
+                    updateSelectedTeamUseCase = appContainer.updateSelectedTeamUseCase,
+                    audioPlayer = appContainer.audioPlayer,
                 ) as T
             }
 

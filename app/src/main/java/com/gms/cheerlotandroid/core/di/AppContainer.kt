@@ -10,11 +10,14 @@ import com.gms.cheerlotandroid.data.source.TeamCatalog
 import com.gms.cheerlotandroid.data.storage.datastore.teamSelectionDataStore
 import com.gms.cheerlotandroid.data.storage.local.CheerLotDatabase
 import com.gms.cheerlotandroid.data.storage.local.CheerLotDatabaseMigrations
+import com.gms.cheerlotandroid.core.media.AudioPlaybackPlayer
 import com.gms.cheerlotandroid.domain.repository.PlayerRepository
 import com.gms.cheerlotandroid.domain.repository.TeamRepository
 import com.gms.cheerlotandroid.domain.repository.TeamSelectionRepository
+import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
+import com.gms.cheerlotandroid.domain.usecase.playback.PlayLineupSongsUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetPlayerDetailUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetAllTeamsUseCase
@@ -41,6 +44,11 @@ class AppContainer(
     }
 
     private val networkModule: NetworkModule by lazy { NetworkModule() }
+
+    // 앱 전역에서 하나의 ExoPlayer 인스턴스를 공유합니다.
+    val audioPlayer: AudioPlayer by lazy {
+        AudioPlaybackPlayer(context = appContext)
+    }
 
     val teamRepository: TeamRepository by lazy {
         TeamRepositoryImpl(
@@ -101,6 +109,10 @@ class AppContainer(
 
     val hasSelectedTeamUseCase: HasSelectedTeamUseCase by lazy {
         HasSelectedTeamUseCase(teamSelectionRepository = teamSelectionRepository)
+    }
+
+    val playLineupSongsUseCase: PlayLineupSongsUseCase by lazy {
+        PlayLineupSongsUseCase(audioPlayer = audioPlayer)
     }
 
     // ViewModel 인스턴스는 Android ViewModelStore가 관리하고, Factory는 생성 방법만 제공합니다.

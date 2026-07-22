@@ -16,8 +16,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.gms.cheerlotandroid.core.navigation.CheerLotFullScreen
 import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
 import com.gms.cheerlotandroid.core.navigation.CheerLotRoute
+import com.gms.cheerlotandroid.core.navigation.PlaybackSource
 import com.gms.cheerlotandroid.presentation.main.MainScreen
 
 private const val MAIN_ROUTE = "main"
@@ -101,6 +103,21 @@ fun CheerLotNavHost(
             MainScreen(
                 selectedDestination = navigator.selectedTab,
                 onDestinationSelected = navigator::selectTab,
+                onOpenBasePlayback = { teamId, cheerSongId, playerName ->
+                    navigator.showFullScreen(
+                        CheerLotFullScreen.BasePlayback(
+                            teamId = teamId,
+                            cheerSongId = cheerSongId,
+                            playerName = playerName,
+                            source = PlaybackSource.TEAMMEMBERS
+                        )
+                    )
+                },
+                onOpenLineupPlayback = { startIndex ->
+                    navigator.showFullScreen(
+                        CheerLotFullScreen.LineupPlayback(startIndex = startIndex)
+                    )
+                }
             )
         }
         composable(CheerLotRoute.Settings.route) {
