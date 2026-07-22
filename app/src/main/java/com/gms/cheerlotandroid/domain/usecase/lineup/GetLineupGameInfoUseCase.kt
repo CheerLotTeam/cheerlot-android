@@ -26,19 +26,13 @@ class GetLineupGameInfoUseCase(
         recentGameInfo: TeamGameInfo,
         preview: GameScheduleInfo?
     ): LineupGameInfo {
-        val gameInfo = if (recentGameInfo.lineupUpdatedToday) {
+        val gameInfo = if (recentGameInfo.status == GameStatus.PLAYING_TODAY) {
             recentGameInfo
         } else {
             recentGameInfo.copy(
-                status = if (recentGameInfo.status == GameStatus.PLAYING_TODAY) {
-                    GameStatus.LINEUP_PENDING
-                } else {
-                    recentGameInfo.status
-                },
                 opponentTeamId = preview?.opponentTeamId,
                 starterPitcherName = preview?.starterPitcherName,
-                isHome = preview?.isHome,
-                lineupUpdatedToday = false
+                isHome = preview?.isHome
                 // lastGameDate는 "마지막 확정 경기 날짜"라는 recentGameInfo의 정체성이라 덮어쓰지 않습니다.
             )
         }
