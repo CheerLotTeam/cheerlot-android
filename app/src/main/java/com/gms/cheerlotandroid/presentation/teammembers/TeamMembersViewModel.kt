@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.stateIn
 
 internal data class TeamMembersUiState(
     val teamId: TeamId? = null,
-    val rows: List<TeamMembersRowVO> = emptyList(),
+    val rows: List<TeamMembersRow> = emptyList(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
@@ -84,7 +84,7 @@ internal class TeamMembersViewModel(
         state.teamId?.let { playTeamMembersUseCase.playAll(state.rows, it) }
     }
 
-    fun onTapSong(row: TeamMembersRowVO) {
+    fun onTapSong(row: TeamMembersRow) {
         val teamId = uiState.value.teamId ?: return
         if (!row.hasSong) {
             snackbarMessage.value = "아직 개인 응원가가 없어요"
@@ -99,15 +99,15 @@ internal class TeamMembersViewModel(
 }
 
 // 응원가 있는 선수 먼저, 그다음 이름순. 선수당 응원가가 여러 개면 곡 개수만큼 row로 펼칩니다(iOS TeamMembersViewModel과 동일).
-private fun buildRows(players: List<PlayerInfo>): List<TeamMembersRowVO> {
+private fun buildRows(players: List<PlayerInfo>): List<TeamMembersRow> {
     return players
         .sortedWith(compareByDescending<PlayerInfo> { it.cheerSongs.isNotEmpty() }.thenBy { it.name })
         .flatMap { player ->
             if (player.cheerSongs.isEmpty()) {
-                listOf(TeamMembersRowVO(id = "${player.id.value}-empty", playerName = player.name, backNumber = player.backNumber, song = null))
+                listOf(TeamMembersRow(id = "${player.id.value}-empty", playerName = player.name, backNumber = player.backNumber, song = null))
             } else {
                 player.cheerSongs.map { song ->
-                    TeamMembersRowVO(id = "${player.id.value}-${song.id}", playerName = player.name, backNumber = player.backNumber, song = song)
+                    TeamMembersRow(id = "${player.id.value}-${song.id}", playerName = player.name, backNumber = player.backNumber, song = song)
                 }
             }
         }

@@ -38,7 +38,7 @@ internal fun TeamMembersScreen(
     state: TeamMembersUiState,
     onRefresh: () -> Unit,
     onTapPlayAll: () -> Unit,
-    onTapSong: (TeamMembersRowVO) -> Unit,
+    onTapSong: (TeamMembersRow) -> Unit,
     onSnackbarShown: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
@@ -84,7 +84,7 @@ internal fun TeamMembersScreen(
 private fun TeamMembersContent(
     state: TeamMembersUiState,
     onTapPlayAll: () -> Unit,
-    onTapSong: (TeamMembersRowVO) -> Unit
+    onTapSong: (TeamMembersRow) -> Unit
 ) {
     val teamId = state.teamId
     val team = teamId?.let(TeamCatalog::findById)

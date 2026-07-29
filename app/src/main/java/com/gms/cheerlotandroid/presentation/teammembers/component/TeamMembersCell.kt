@@ -17,11 +17,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
-import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersRowVO
+import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersRow
 
 @Composable
 internal fun TeamMembersCell(
-    row: TeamMembersRowVO,
+    row: TeamMembersRow,
     primaryColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier

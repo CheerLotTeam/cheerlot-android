@@ -2,7 +2,7 @@ package com.gms.cheerlotandroid.presentation.teammembers
 
 import com.gms.cheerlotandroid.domain.model.cheersong.CheerSongInfo
 
-data class TeamMembersRowVO(
+data class TeamMembersRow(
     val id: String,
     val playerName: String,
     val backNumber: Int,
