@@ -3,7 +3,6 @@ package com.gms.cheerlotandroid.presentation.onboarding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,7 +13,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,6 +26,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
+import com.gms.cheerlotandroid.design.component.CustomTopAppBarEditMode
 import com.gms.cheerlotandroid.design.component.TeamGrid
 import com.gms.cheerlotandroid.design.preview.DevicePreviews
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
@@ -85,63 +84,47 @@ private fun TeamSelectContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .safeDrawingPadding()
-            .padding(horizontal = 28.dp)
-            .padding(top = if (mode.showsTopBar) 20.dp else 32.dp, bottom = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
-        // TODO: 실제 TopBar 디자인은 별도 이슈에서 만듭니다. 지금은 mode 분기 구조만 준비합니다.
         if (mode.showsTopBar) {
-            TeamSelectTopBarPlaceholder(
+            CustomTopAppBarEditMode(
                 title = mode.navigationTitle,
-                isCompleteEnabled = isCompleteEnabled,
                 onClose = onClose,
-                onComplete = onCompleteClick
+                onCheck = onCompleteClick
             )
         }
 
-        Text(
-            text = mode.guideText,
-            style = if (mode == TeamSelectMode.ONBOARDING) CheerLotTextStyle.SB4 else CheerLotTextStyle.M3,
-            color = if (mode == TeamSelectMode.ONBOARDING) GrayScaleColor.GrayBlack else GrayScaleColor.Gray300,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            softWrap = false,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 10.dp)
-        )
+                .weight(1f)
+                .padding(horizontal = 28.dp)
+                .padding(top = if (mode.showsTopBar) 20.dp else 32.dp, bottom = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(15.dp)
+        ) {
+            Text(
+                text = mode.guideText,
+                style = if (mode == TeamSelectMode.ONBOARDING) CheerLotTextStyle.SB4 else CheerLotTextStyle.M3,
+                color = if (mode == TeamSelectMode.ONBOARDING) GrayScaleColor.GrayBlack else GrayScaleColor.Gray300,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+            )
 
-        TeamGrid(
-            teams = teams,
-            selectedTeamId = selectedTeamId,
-            onSelect = onSelect,
-            modifier = Modifier.weight(1f)
-        )
+            TeamGrid(
+                teams = teams,
+                selectedTeamId = selectedTeamId,
+                onSelect = onSelect,
+                modifier = Modifier.weight(1f)
+            )
 
-        if (mode.showsBottomButton) {
-            CompleteButton(enabled = isCompleteEnabled, onClick = onCompleteClick)
+            if (mode.showsBottomButton) {
+                CompleteButton(enabled = isCompleteEnabled, onClick = onCompleteClick)
+            }
         }
-    }
-}
-
-// 임시 TopBar
-@Composable
-private fun TeamSelectTopBarPlaceholder(
-    title: String,
-    isCompleteEnabled: Boolean,
-    onClose: () -> Unit,
-    onComplete: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TextButton(onClick = onClose) { Text("닫기") }
-        Text(text = title, style = CheerLotTextStyle.SB6, color = GrayScaleColor.GrayBlack)
-        TextButton(onClick = onComplete, enabled = isCompleteEnabled) { Text("완료") }
     }
 }
 
