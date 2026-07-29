@@ -33,9 +33,8 @@ private val TOP_APP_BAR_HEIGHT = 46.dp
 private val DEFAULT_HORIZONTAL_PADDING = 20.dp
 private val LARGE_TITLE_HORIZONTAL_PADDING = 16.dp
 
-// iOS의 NavigationBarItem + ToolBarItemBuilder에 대응합니다.
 // enum dispatch 대신 leading/center/trailing 슬롯을 받는 Compose 관용 방식으로 구성했습니다.
-// center는 leading/trailing 폭과 무관하게 바 전체 기준 정중앙에 옵니다(iOS .principal placement와 동일).
+// center는 leading/trailing 폭과 무관하게 바 전체 기준 정중앙에 옵니다.
 // 상태바 등 safe area 처리는 이 컴포넌트가 아니라 화면(root) 쪽 책임입니다.
 @Composable
 fun CustomTopAppBar(
