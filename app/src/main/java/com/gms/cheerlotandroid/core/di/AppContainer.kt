@@ -18,6 +18,7 @@ import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayLineupSongsUseCase
+import com.gms.cheerlotandroid.domain.usecase.playback.PlayTeamMembersUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetPlayerDetailUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetAllTeamsUseCase
@@ -113,6 +114,10 @@ class AppContainer(
 
     val playLineupSongsUseCase: PlayLineupSongsUseCase by lazy {
         PlayLineupSongsUseCase(audioPlayer = audioPlayer)
+    }
+
+    val playTeamMembersUseCase: PlayTeamMembersUseCase by lazy {
+        PlayTeamMembersUseCase(audioPlayer = audioPlayer)
     }
 
     // ViewModel 인스턴스는 Android ViewModelStore가 관리하고, Factory는 생성 방법만 제공합니다.
