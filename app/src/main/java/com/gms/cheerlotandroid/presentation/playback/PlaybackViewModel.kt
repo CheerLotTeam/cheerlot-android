@@ -1,5 +1,6 @@
 package com.gms.cheerlotandroid.presentation.playback
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gms.cheerlotandroid.design.team.TeamAsset
@@ -15,6 +16,7 @@ internal data class PlaybackUiState(
     val playerName: String = "",
     val lyrics: String = "",
     val teamInitial: String = "",
+    val primaryColor: Color = Color.Black,
     val isPlaying: Boolean = false,
     val progressMs: Long = 0L,
     val durationMs: Long = 0L,
@@ -40,6 +42,7 @@ internal class PlaybackViewModel(
                 lyrics = song?.lyrics.orEmpty(),
                 teamInitial = state.teamId?.let { TeamAsset.from(it).assetPrefix.uppercase() }
                     ?: playerName.take(1),
+                primaryColor = state.teamId?.let { TeamAsset.from(it).primaryColor } ?: Color.Black,
                 isPlaying = state.isPlaying,
                 progressMs = state.currentPositionMs,
                 durationMs = state.durationMs,
