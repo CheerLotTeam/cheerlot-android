@@ -1,5 +1,6 @@
 package com.gms.cheerlotandroid.app.host
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,12 +41,15 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
             val viewModel: PlaybackViewModel =
                 viewModel(factory = LocalAppContainer.current.viewModelFactory)
             val uiState by viewModel.uiState.collectAsState()
+            val closePlayback = {
+                viewModel.close(onClosed = presentationState::dismissFullScreen)
+            }
+
+            BackHandler(onBack = closePlayback)
 
             PlaybackScreen(
                 state = uiState,
-                onClose = {
-                    viewModel.close(onClosed = presentationState::dismissFullScreen)
-                },
+                onClose = closePlayback,
                 onTogglePlayback = viewModel::togglePlayback,
                 onSeek = viewModel::seek,
                 onPlayNext = viewModel::playNext,
@@ -56,6 +60,7 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
         }
 
         is CheerLotFullScreen.LineupPlayback -> {
+            BackHandler(onBack = presentationState::dismissFullScreen)
             FullScreenPlaceholder(fullScreen, onClose = presentationState::dismissFullScreen)
         }
 
