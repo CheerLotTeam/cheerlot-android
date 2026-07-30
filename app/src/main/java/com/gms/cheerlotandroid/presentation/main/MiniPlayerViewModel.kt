@@ -2,7 +2,6 @@ package com.gms.cheerlotandroid.presentation.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gms.cheerlotandroid.design.team.TeamAsset
 import com.gms.cheerlotandroid.domain.model.playback.PlaybackMode
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
@@ -33,7 +32,7 @@ internal class MiniPlayerViewModel(
 
             MiniPlayerUiState(
                 title = "$playerName · ${song.title}",
-                teamInitial = state.teamId?.let { TeamAsset.from(it).assetPrefix.uppercase() }
+                teamInitial = state.teamId?.value?.take(1)
                     ?: playerName.take(1),
                 isPlaying = state.isPlaying
             )
