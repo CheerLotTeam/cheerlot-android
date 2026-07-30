@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.gms.cheerlotandroid.core.navigation.CheerLotFullScreen
 import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
 import com.gms.cheerlotandroid.core.navigation.CheerLotRoute
+import com.gms.cheerlotandroid.core.navigation.CheerLotSheet
 import com.gms.cheerlotandroid.core.navigation.PlaybackSource
 import com.gms.cheerlotandroid.presentation.main.MainScreen
 
@@ -117,6 +118,9 @@ fun CheerLotNavHost(
                     navigator.showFullScreen(
                         CheerLotFullScreen.LineupPlayback(startIndex = startIndex)
                     )
+                },
+                onOpenLineupChange = { playerId ->
+                    navigator.showSheet(CheerLotSheet.LineupChange(playerId = playerId))
                 },
                 onOpenSettings = { navigator.navigate(CheerLotRoute.Settings) }
             )

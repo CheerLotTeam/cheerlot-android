@@ -49,6 +49,7 @@ fun MainScreen(
     onDestinationSelected: (CheerLotMainTab) -> Unit,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
     onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
+    onOpenLineupChange: (playerId: String) -> Unit = {},
     onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
@@ -73,6 +74,7 @@ fun MainScreen(
             tabColor = TeamTheme.colors.secondary,
             onOpenBasePlayback = onOpenBasePlayback,
             onOpenLineupPlayback = onOpenLineupPlayback,
+            onOpenLineupChange = onOpenLineupChange,
             onOpenSettings = onOpenSettings,
             modifier = modifier
         )
@@ -86,6 +88,7 @@ private fun MainContent(
     tabColor: Color,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
     onOpenLineupPlayback: (startIndex: Int) -> Unit,
+    onOpenLineupChange: (playerId: String) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -125,6 +128,7 @@ private fun MainContent(
             destination = selectedDestination,
             contentPadding = innerPadding,
             onOpenBasePlayback = onOpenBasePlayback,
+            onOpenLineupChange = onOpenLineupChange,
             onOpenSettings = onOpenSettings
         )
     }
@@ -219,6 +223,7 @@ private fun MainTabContent(
     destination: CheerLotMainTab,
     contentPadding: PaddingValues,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
+    onOpenLineupChange: (playerId: String) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -228,7 +233,10 @@ private fun MainTabContent(
             .padding(contentPadding)
     ) {
         when (destination) {
-            CheerLotMainTab.LINEUP -> LineupScreen(onOpenSettings = onOpenSettings)
+            CheerLotMainTab.LINEUP -> LineupScreen(
+                onOpenSettings = onOpenSettings,
+                onChangePlayer = { player -> onOpenLineupChange(player.id.value) }
+            )
             CheerLotMainTab.TEAM_MEMBERS -> TeamMembersTab(
                 onOpenBasePlayback = onOpenBasePlayback,
                 onOpenSettings = onOpenSettings

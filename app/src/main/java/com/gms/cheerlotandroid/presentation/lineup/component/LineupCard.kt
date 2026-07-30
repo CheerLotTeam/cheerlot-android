@@ -53,6 +53,7 @@ internal fun LineupCard(
     state: LineupUiState,
     colors: LineupColors,
     onPlayerClick: (PlayerInfo) -> Unit,
+    onChangePlayer: (PlayerInfo) -> Unit,
     onToggleShowLineup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -103,6 +104,7 @@ internal fun LineupCard(
                     players = state.players,
                     colors = colors,
                     onPlayerClick = onPlayerClick,
+                    onChangePlayer = onChangePlayer,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -126,6 +128,7 @@ private fun LineupPlayerList(
     players: List<PlayerInfo>,
     colors: LineupColors,
     onPlayerClick: (PlayerInfo) -> Unit,
+    onChangePlayer: (PlayerInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val lineupPlayers = players.take(LINEUP_PLAYER_COUNT)
@@ -139,6 +142,7 @@ private fun LineupPlayerList(
                     player = player,
                     colors = colors,
                     onClick = { onPlayerClick(player) },
+                    onChangePlayer = { onChangePlayer(player) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -207,6 +211,7 @@ private fun LineupCardPreview() {
                 ),
                 colors = TeamTheme.colors.toLineupColors(),
                 onPlayerClick = {},
+                onChangePlayer = {},
                 onToggleShowLineup = {},
                 modifier = Modifier
                     .fillMaxSize()

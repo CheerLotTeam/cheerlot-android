@@ -46,6 +46,7 @@ private val cardBottomPadding = 10.dp
 @Composable
 fun LineupScreen(
     onOpenSettings: () -> Unit,
+    onChangePlayer: (PlayerInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val viewModel: LineupViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
@@ -58,6 +59,7 @@ fun LineupScreen(
             viewModel.onPlayerTap(player)
         },
         onToggleShowLineup = viewModel::toggleShowLineup,
+        onChangePlayer = onChangePlayer,
         onRefresh = viewModel::refresh,
         onDismissToast = viewModel::dismissToast,
         onProfileClick = onOpenSettings,
@@ -70,6 +72,7 @@ private fun LineupContent(
     state: LineupUiState,
     onPlayerClick: (PlayerInfo) -> Unit,
     onToggleShowLineup: () -> Unit,
+    onChangePlayer: (PlayerInfo) -> Unit,
     onRefresh: () -> Unit,
     onDismissToast: () -> Unit,
     onProfileClick: () -> Unit,
@@ -121,6 +124,7 @@ private fun LineupContent(
                                 state = state,
                                 colors = lineupColors,
                                 onPlayerClick = onPlayerClick,
+                                onChangePlayer = onChangePlayer,
                                 onToggleShowLineup = onToggleShowLineup,
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -202,6 +206,7 @@ private fun LineupContentPlayingTodayPreview() {
                 ),
                 onPlayerClick = {},
                 onToggleShowLineup = {},
+                onChangePlayer = {},
                 onRefresh = {},
                 onDismissToast = {},
                 onProfileClick = {}
@@ -224,6 +229,7 @@ private fun LineupContentOffDayPreview() {
                 ),
                 onPlayerClick = {},
                 onToggleShowLineup = {},
+                onChangePlayer = {},
                 onRefresh = {},
                 onDismissToast = {},
                 onProfileClick = {}
