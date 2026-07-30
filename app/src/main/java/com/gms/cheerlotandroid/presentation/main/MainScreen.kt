@@ -1,5 +1,6 @@
 package com.gms.cheerlotandroid.presentation.main
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -21,10 +21,9 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +36,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
-import com.gms.cheerlotandroid.design.color.semantic.CheerLotColor
 import com.gms.cheerlotandroid.design.component.CustomTopAppBarLargeTitle
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.theme.TeamTheme
@@ -58,17 +56,13 @@ fun MainScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedTeamId = uiState.selectedTeamId
 
-    // 팀 미선택 상태는 정상적인 Main 진입 경로가 아니지만 앱 공통 색상으로 방어 처리합니다.
+    // Main 진입 직후 선택 팀 Flow의 첫 값이 도착하기 전에는 TeamTheme 의존 화면을 구성하지 않습니다.
     if (selectedTeamId == null) {
-        MainContent(
-            selectedDestination = selectedDestination,
-            onDestinationSelected = onDestinationSelected,
-            tabColor = CheerLotColor.AppSecondary,
-            onOpenBasePlayback = onOpenBasePlayback,
-            onOpenLineupPlayback = onOpenLineupPlayback,
-            onOpenSettings = onOpenSettings,
+        Box(
             modifier = modifier
-        )
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {}
         return
     }
 
@@ -97,7 +91,7 @@ private fun MainContent(
 ) {
     val miniPlayerViewModel: MiniPlayerViewModel =
         viewModel(factory = LocalAppContainer.current.viewModelFactory)
-    val miniPlayerState by miniPlayerViewModel.uiState.collectAsState()
+    val miniPlayerState by miniPlayerViewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -187,7 +181,7 @@ private fun MainBottomNavigationBar(
 ) {
     NavigationBar(
         modifier = modifier,
-        containerColor = GrayScaleColor.GrayWhite,
+        containerColor = Color.White,
         tonalElevation = 0.dp
     ) {
         CheerLotMainTab.entries.forEach { destination ->
@@ -231,46 +225,57 @@ private fun MainTabContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center
+            .padding(contentPadding)
     ) {
-        if (destination == CheerLotMainTab.LINEUP) {
-            LineupScreen(onOpenSettings = onOpenSettings)
-        } else if (destination == CheerLotMainTab.TEAM_MEMBERS) {
-            val viewModel: TeamMembersTestViewModel =
-                viewModel(factory = LocalAppContainer.current.viewModelFactory)
-            val uiState by viewModel.uiState.collectAsState()
-
-            TeamMembersTestScreen(
-                state = uiState,
-                onSelectTestTeam = viewModel::selectTeamForTesting,
-                onRowClick = { index ->
-                    val row = uiState.rows.getOrNull(index)
-                    val teamId = uiState.teamId
-                    viewModel.onRowClick(index)
-                    if (row != null && teamId != null) {
-                        onOpenBasePlayback(teamId, row.song.id, row.playerName)
-                    }
-                },
-                onProfileClick = onOpenSettings
+        when (destination) {
+            CheerLotMainTab.LINEUP -> LineupScreen(onOpenSettings = onOpenSettings)
+            CheerLotMainTab.TEAM_MEMBERS -> TeamMembersTab(
+                onOpenBasePlayback = onOpenBasePlayback,
+                onOpenSettings = onOpenSettings
             )
-        } else if (destination == CheerLotMainTab.SEARCH) {
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                topBar = { CustomTopAppBarLargeTitle(title = "검색") },
-                contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
-            ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    MainTabPlaceholder(destination = destination)
-                }
+            CheerLotMainTab.SEARCH -> SearchTab()
+        }
+    }
+}
+
+@Composable
+private fun TeamMembersTab(
+    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
+    onOpenSettings: () -> Unit
+) {
+    val viewModel: TeamMembersTestViewModel =
+        viewModel(factory = LocalAppContainer.current.viewModelFactory)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    TeamMembersTestScreen(
+        state = uiState,
+        onSelectTestTeam = viewModel::selectTeamForTesting,
+        onRowClick = { index ->
+            val row = uiState.rows.getOrNull(index)
+            val teamId = uiState.teamId
+            viewModel.onRowClick(index)
+            if (row != null && teamId != null) {
+                onOpenBasePlayback(teamId, row.song.id, row.playerName)
             }
-        } else {
-            MainTabPlaceholder(destination = destination)
+        },
+        onProfileClick = onOpenSettings
+    )
+}
+
+@Composable
+private fun SearchTab() {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = { CustomTopAppBarLargeTitle(title = "검색") },
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentAlignment = Alignment.Center
+        ) {
+            MainTabPlaceholder(destination = CheerLotMainTab.SEARCH)
         }
     }
 }
