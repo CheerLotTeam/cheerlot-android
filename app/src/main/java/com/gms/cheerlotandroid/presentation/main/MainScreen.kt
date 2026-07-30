@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
@@ -45,8 +49,6 @@ import com.gms.cheerlotandroid.presentation.lineup.LineupScreen
 
 @Composable
 fun MainScreen(
-    selectedDestination: CheerLotMainTab,
-    onDestinationSelected: (CheerLotMainTab) -> Unit,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
     onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
     onOpenLineupChange: (playerId: String) -> Unit = {},
@@ -69,8 +71,6 @@ fun MainScreen(
 
     TeamTheme(teamId = selectedTeamId) {
         MainContent(
-            selectedDestination = selectedDestination,
-            onDestinationSelected = onDestinationSelected,
             tabColor = TeamTheme.colors.secondary,
             onOpenBasePlayback = onOpenBasePlayback,
             onOpenLineupPlayback = onOpenLineupPlayback,
@@ -83,8 +83,6 @@ fun MainScreen(
 
 @Composable
 private fun MainContent(
-    selectedDestination: CheerLotMainTab,
-    onDestinationSelected: (CheerLotMainTab) -> Unit,
     tabColor: Color,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
     onOpenLineupPlayback: (startIndex: Int) -> Unit,
@@ -92,6 +90,12 @@ private fun MainContent(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val tabNavController = rememberNavController()
+    val tabBackStackEntry by tabNavController.currentBackStackEntryAsState()
+    val currentDestination = CheerLotMainTab.entries.firstOrNull {
+        it.route == tabBackStackEntry?.destination?.route
+    } ?: CheerLotMainTab.LINEUP
+
     val miniPlayerViewModel: MiniPlayerViewModel =
         viewModel(factory = LocalAppContainer.current.viewModelFactory)
     val miniPlayerState by miniPlayerViewModel.uiState.collectAsStateWithLifecycle()
@@ -104,8 +108,16 @@ private fun MainContent(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
         bottomBar = {
             MainBottomBar(
-                selectedDestination = selectedDestination,
-                onDestinationSelected = onDestinationSelected,
+                selectedDestination = currentDestination,
+                onDestinationSelected = { destination ->
+                    tabNavController.navigate(destination.route) {
+                        popUpTo(tabNavController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 tabColor = tabColor,
                 miniPlayerState = miniPlayerState,
                 onMiniPlayerClick = {
@@ -124,13 +136,29 @@ private fun MainContent(
             )
         }
     ) { innerPadding ->
-        MainTabContent(
-            destination = selectedDestination,
-            contentPadding = innerPadding,
-            onOpenBasePlayback = onOpenBasePlayback,
-            onOpenLineupChange = onOpenLineupChange,
-            onOpenSettings = onOpenSettings
-        )
+        NavHost(
+            navController = tabNavController,
+            startDestination = CheerLotMainTab.LINEUP.route,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            composable(CheerLotMainTab.LINEUP.route) {
+                LineupScreen(
+                    onOpenSettings = onOpenSettings,
+                    onChangePlayer = { player -> onOpenLineupChange(player.id.value) },
+                )
+            }
+            composable(CheerLotMainTab.TEAM_MEMBERS.route) {
+                TeamMembersTab(
+                    onOpenBasePlayback = onOpenBasePlayback,
+                    onOpenSettings = onOpenSettings,
+                )
+            }
+            composable(CheerLotMainTab.SEARCH.route) {
+                SearchTab()
+            }
+        }
     }
 }
 
@@ -214,34 +242,6 @@ private fun MainBottomNavigationBar(
                     unselectedTextColor = GrayScaleColor.Gray300
                 )
             )
-        }
-    }
-}
-
-@Composable
-private fun MainTabContent(
-    destination: CheerLotMainTab,
-    contentPadding: PaddingValues,
-    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
-    onOpenLineupChange: (playerId: String) -> Unit,
-    onOpenSettings: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(contentPadding)
-    ) {
-        when (destination) {
-            CheerLotMainTab.LINEUP -> LineupScreen(
-                onOpenSettings = onOpenSettings,
-                onChangePlayer = { player -> onOpenLineupChange(player.id.value) }
-            )
-            CheerLotMainTab.TEAM_MEMBERS -> TeamMembersTab(
-                onOpenBasePlayback = onOpenBasePlayback,
-                onOpenSettings = onOpenSettings
-            )
-            CheerLotMainTab.SEARCH -> SearchTab()
         }
     }
 }
