@@ -117,7 +117,8 @@ fun CheerLotNavHost(
                     navigator.showFullScreen(
                         CheerLotFullScreen.LineupPlayback(startIndex = startIndex)
                     )
-                }
+                },
+                onOpenSettings = { navigator.navigate(CheerLotRoute.Settings) }
             )
         }
         composable(CheerLotRoute.Settings.route) {

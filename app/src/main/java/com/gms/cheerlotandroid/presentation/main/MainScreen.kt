@@ -4,10 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,10 +38,12 @@ import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.color.semantic.CheerLotColor
-import com.gms.cheerlotandroid.design.team.TeamAsset
+import com.gms.cheerlotandroid.design.component.CustomTopAppBarLargeTitle
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
+import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.team.TeamId
+import com.gms.cheerlotandroid.presentation.lineup.LineupScreen
 
 @Composable
 fun MainScreen(
@@ -45,22 +51,38 @@ fun MainScreen(
     onDestinationSelected: (CheerLotMainTab) -> Unit,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
     onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    // 팀 미선택 상태는 이 화면에 정상적으로 진입할 수 없는 조건이지만, 방어적으로 앱 기본 색을 fallback합니다.
-    val tabColor = uiState.selectedTeamId?.let { TeamAsset.from(it).secondaryColor }
-        ?: CheerLotColor.AppSecondary
+    val selectedTeamId = uiState.selectedTeamId
 
-    MainContent(
-        selectedDestination = selectedDestination,
-        onDestinationSelected = onDestinationSelected,
-        tabColor = tabColor,
-        onOpenBasePlayback = onOpenBasePlayback,
-        onOpenLineupPlayback = onOpenLineupPlayback,
-        modifier = modifier
-    )
+    // 팀 미선택 상태는 정상적인 Main 진입 경로가 아니지만 앱 공통 색상으로 방어 처리합니다.
+    if (selectedTeamId == null) {
+        MainContent(
+            selectedDestination = selectedDestination,
+            onDestinationSelected = onDestinationSelected,
+            tabColor = CheerLotColor.AppSecondary,
+            onOpenBasePlayback = onOpenBasePlayback,
+            onOpenLineupPlayback = onOpenLineupPlayback,
+            onOpenSettings = onOpenSettings,
+            modifier = modifier
+        )
+        return
+    }
+
+    TeamTheme(teamId = selectedTeamId) {
+        MainContent(
+            selectedDestination = selectedDestination,
+            onDestinationSelected = onDestinationSelected,
+            tabColor = TeamTheme.colors.secondary,
+            onOpenBasePlayback = onOpenBasePlayback,
+            onOpenLineupPlayback = onOpenLineupPlayback,
+            onOpenSettings = onOpenSettings,
+            modifier = modifier
+        )
+    }
 }
 
 @Composable
@@ -70,6 +92,7 @@ private fun MainContent(
     tabColor: Color,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
     onOpenLineupPlayback: (startIndex: Int) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val miniPlayerViewModel: MiniPlayerViewModel =
@@ -79,6 +102,9 @@ private fun MainContent(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
+        // 라인업/전체선수/검색 3개 탭이 각자 자기 Scaffold(topBar = ...)로 상태바를 처리하므로,
+        // 여기서는 top을 빼고 좌우/아래(제스처 내비게이션 바 등)만 반영합니다.
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
         bottomBar = {
             MainBottomBar(
                 selectedDestination = selectedDestination,
@@ -104,7 +130,8 @@ private fun MainContent(
         MainTabContent(
             destination = selectedDestination,
             contentPadding = innerPadding,
-            onOpenBasePlayback = onOpenBasePlayback
+            onOpenBasePlayback = onOpenBasePlayback,
+            onOpenSettings = onOpenSettings
         )
     }
 }
@@ -198,6 +225,7 @@ private fun MainTabContent(
     destination: CheerLotMainTab,
     contentPadding: PaddingValues,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -206,7 +234,9 @@ private fun MainTabContent(
             .padding(contentPadding),
         contentAlignment = Alignment.Center
     ) {
-        if (destination == CheerLotMainTab.TEAM_MEMBERS) {
+        if (destination == CheerLotMainTab.LINEUP) {
+            LineupScreen(onOpenSettings = onOpenSettings)
+        } else if (destination == CheerLotMainTab.TEAM_MEMBERS) {
             val viewModel: TeamMembersTestViewModel =
                 viewModel(factory = LocalAppContainer.current.viewModelFactory)
             val uiState by viewModel.uiState.collectAsState()
@@ -221,8 +251,24 @@ private fun MainTabContent(
                     if (row != null && teamId != null) {
                         onOpenBasePlayback(teamId, row.song.id, row.playerName)
                     }
-                }
+                },
+                onProfileClick = onOpenSettings
             )
+        } else if (destination == CheerLotMainTab.SEARCH) {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = { CustomTopAppBarLargeTitle(title = "검색") },
+                contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    MainTabPlaceholder(destination = destination)
+                }
+            }
         } else {
             MainTabPlaceholder(destination = destination)
         }
@@ -262,18 +308,20 @@ private fun MainContentPreview() {
     var selectedDestination by rememberSaveable { mutableStateOf(CheerLotMainTab.LINEUP) }
 
     CheerLotTheme {
-        MainBottomBar(
-            selectedDestination = selectedDestination,
-            onDestinationSelected = { selectedDestination = it },
-            tabColor = TeamAsset.from(TeamId("KIA")).secondaryColor,
-            miniPlayerState = MiniPlayerUiState(
-                title = "김도영",
-                teamInitial = "KIA",
-                isPlaying = false
-            ),
-            onMiniPlayerClick = {},
-            onMiniPlayerPlayClick = {},
-            onMiniPlayerSkipNextClick = {}
-        )
+        TeamTheme(teamId = TeamId("KIA")) {
+            MainBottomBar(
+                selectedDestination = selectedDestination,
+                onDestinationSelected = { selectedDestination = it },
+                tabColor = TeamTheme.colors.secondary,
+                miniPlayerState = MiniPlayerUiState(
+                    title = "김도영",
+                    teamInitial = "KIA",
+                    isPlaying = false
+                ),
+                onMiniPlayerClick = {},
+                onMiniPlayerPlayClick = {},
+                onMiniPlayerSkipNextClick = {}
+            )
+        }
     }
 }
