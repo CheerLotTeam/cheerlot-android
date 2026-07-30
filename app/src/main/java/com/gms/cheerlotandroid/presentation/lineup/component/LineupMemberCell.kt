@@ -43,7 +43,7 @@ import com.gms.cheerlotandroid.presentation.lineup.LineupColors
 import com.gms.cheerlotandroid.presentation.lineup.toLineupColors
 import kotlin.math.abs
 
-private const val FULL_SWIPE_THRESHOLD = 0.75f
+private const val FULL_SWIPE_THRESHOLD = 0.6f
 
 @Composable
 internal fun LineupMemberCell(
@@ -55,13 +55,16 @@ internal fun LineupMemberCell(
 ) {
     val hasSong = player.cheerSongs.isNotEmpty()
     val cellInteractionSource = remember { MutableInteractionSource() }
+    // 스와이프 위치와 완료 상태 관리
     val dismissState = rememberSwipeToDismissBoxState(
         positionalThreshold = { distance -> distance * FULL_SWIPE_THRESHOLD }
     )
+    // 실제로 드러난 영역의 너비 계산
     val revealedWidth = with(LocalDensity.current) {
         abs(runCatching { dismissState.requireOffset() }.getOrDefault(0f)).toDp()
     }
 
+    // 스와이프 완료 감지
     LaunchedEffect(dismissState.settledValue) {
         if (dismissState.settledValue == SwipeToDismissBoxValue.EndToStart) {
             onChangePlayer()
@@ -94,8 +97,8 @@ internal fun LineupMemberCell(
                 }
             }
         },
-        enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = true
+        enableDismissFromStartToEnd = false, // 왼쪽에서 오른쪽
+        enableDismissFromEndToStart = true // 오른쪽에서 왼쪽
     ) {
         Row(
             modifier = Modifier
