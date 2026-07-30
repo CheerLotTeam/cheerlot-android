@@ -265,9 +265,9 @@ private fun MainContentPreview() {
         MainBottomBar(
             selectedDestination = selectedDestination,
             onDestinationSelected = { selectedDestination = it },
-            tabColor = TeamAsset.from(TeamId("LOTTE")).secondaryColor,
+            tabColor = TeamAsset.from(TeamId("KIA")).secondaryColor,
             miniPlayerState = MiniPlayerUiState(
-                title = "김도영 · 최강 도영",
+                title = "김도영",
                 teamInitial = "KIA",
                 isPlaying = false
             ),
