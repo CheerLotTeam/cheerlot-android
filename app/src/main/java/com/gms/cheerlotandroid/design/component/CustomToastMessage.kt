@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
@@ -69,7 +70,7 @@ fun CustomToastMessage(
                 if (showCaution) {
                     Icon(
                         imageVector = Icons.Filled.Error,
-                        contentDescription = "오류",
+                        contentDescription = "",
                         tint = GrayScaleColor.GrayWhite,
                         modifier = Modifier.size(18.dp)
                     )
@@ -79,6 +80,7 @@ fun CustomToastMessage(
                     style = CheerLotTextStyle.M3,
                     color = GrayScaleColor.GrayWhite,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center
                 )
             }
