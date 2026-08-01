@@ -1,6 +1,5 @@
 package com.gms.cheerlotandroid.presentation.lineup
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -14,26 +13,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
-import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
+import com.gms.cheerlotandroid.core.navigation.CheerLotDialog
 import com.gms.cheerlotandroid.design.component.CustomToastMessage
 import com.gms.cheerlotandroid.design.component.CustomTopAppBarTitleWithProfile
 import com.gms.cheerlotandroid.design.preview.DevicePreviews
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.theme.TeamTheme
-import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.cheersong.CheerSongInfo
 import com.gms.cheerlotandroid.domain.model.player.PlayerId
 import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
@@ -47,10 +46,22 @@ private val cardBottomPadding = 10.dp
 fun LineupScreen(
     onOpenSettings: () -> Unit,
     onChangePlayer: (PlayerInfo) -> Unit,
+    onShowDialog: (CheerLotDialog) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val viewModel: LineupViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.errorMessage) {
+        val errorMessage = uiState.errorMessage ?: return@LaunchedEffect
+        onShowDialog(
+            CheerLotDialog.Error(
+                message = errorMessage,
+                onRetry = viewModel::refresh
+            )
+        )
+        viewModel.dismissError()
+    }
 
     LineupContent(
         state = uiState,
@@ -110,10 +121,11 @@ private fun LineupContent(
                             .fillMaxWidth()
                             .height(viewportHeight)
                     ) {
-                        if (state.teamId == null) {
-                            LineupMessage(text = "설정에서 팀을 먼저 선택해주세요.")
-                        } else if (state.errorMessage != null) {
-                            LineupMessage(text = "라인업을 불러오지 못했습니다.\n${state.errorMessage}")
+                        if (state.isLoading) {
+                            CircularProgressIndicator(
+                                color = TeamTheme.colors.primary,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
                         } else {
                             val teamColors = TeamTheme.colors
                             val lineupColors = remember(teamColors) {
@@ -145,25 +157,6 @@ private fun LineupContent(
                 onDismiss = onDismissToast
             )
         }
-    }
-}
-
-// TODO: dialog로 수정
-@Composable
-private fun LineupMessage(text: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.fillMaxWidth(),
-            style = CheerLotTextStyle.R2,
-            color = GrayScaleColor.Gray500,
-            textAlign = TextAlign.Center
-        )
     }
 }
 
@@ -202,7 +195,8 @@ private fun LineupContentPlayingTodayPreview() {
                     teamEnglishName = "LOTTE GIANTS",
                     teamShortName = "롯데",
                     opponentTeamName = "삼성",
-                    players = previewPlayers
+                    players = previewPlayers,
+                    isLoading = false
                 ),
                 onPlayerClick = {},
                 onToggleShowLineup = {},
@@ -225,7 +219,8 @@ private fun LineupContentOffDayPreview() {
                 state = LineupUiState(
                     teamId = TeamId("LOTTE"),
                     teamEnglishName = "LOTTE GIANTS",
-                    teamShortName = "롯데"
+                    teamShortName = "롯데",
+                    isLoading = false
                 ),
                 onPlayerClick = {},
                 onToggleShowLineup = {},

@@ -20,6 +20,7 @@ data class LineupUiState(
     val showLineupOverride: Boolean = false,
     val toastMessage: String = "",
     val isToastVisible: Boolean = false,
+    val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null
 ) {

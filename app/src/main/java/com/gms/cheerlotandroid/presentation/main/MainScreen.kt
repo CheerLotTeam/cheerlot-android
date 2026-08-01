@@ -38,6 +38,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
+import com.gms.cheerlotandroid.core.navigation.CheerLotDialog
 import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.component.CustomTopAppBarLargeTitle
@@ -52,6 +53,7 @@ fun MainScreen(
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
     onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
     onOpenLineupChange: (playerId: String) -> Unit = {},
+    onShowDialog: (CheerLotDialog) -> Unit = {},
     onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
@@ -75,6 +77,7 @@ fun MainScreen(
             onOpenBasePlayback = onOpenBasePlayback,
             onOpenLineupPlayback = onOpenLineupPlayback,
             onOpenLineupChange = onOpenLineupChange,
+            onShowDialog = onShowDialog,
             onOpenSettings = onOpenSettings,
             modifier = modifier
         )
@@ -87,6 +90,7 @@ private fun MainContent(
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
     onOpenLineupPlayback: (startIndex: Int) -> Unit,
     onOpenLineupChange: (playerId: String) -> Unit,
+    onShowDialog: (CheerLotDialog) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -147,6 +151,7 @@ private fun MainContent(
                 LineupScreen(
                     onOpenSettings = onOpenSettings,
                     onChangePlayer = { player -> onOpenLineupChange(player.id.value) },
+                    onShowDialog = onShowDialog,
                 )
             }
             composable(CheerLotMainTab.TEAM_MEMBERS.route) {

@@ -55,6 +55,7 @@ fun CheerLotNavHost(
                 onOpenLineupChange = { playerId ->
                     presentationState.showSheet(CheerLotSheet.LineupChange(playerId = playerId))
                 },
+                onShowDialog = presentationState::showDialog,
                 onOpenSettings = {
                     navController.navigate(CheerLotRoute.Settings.route) {
                         launchSingleTop = true

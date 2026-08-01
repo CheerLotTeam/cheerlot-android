@@ -4,23 +4,27 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gms.cheerlotandroid.domain.model.cheersong.CheerSongInfo
 import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
+import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamGameScheduleUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamUseCase
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -39,68 +43,114 @@ class LineupViewModel(
         val isVisible: Boolean = false
     )
 
-    // 팀 전환 중 화면에 계속 떠 있는 상태라면 초기화되지 않지만, 팀 변경은 보통 이 화면을 벗어나서
-    // 이뤄지므로(설정 > 팀 변경) ViewModel도 함께 재생성되는 게 일반적인 경로입니다.
+    private data class FeedbackState(
+        val toast: ToastState,
+        val errorMessage: String?,
+        val isLoading: Boolean,
+        val isRefreshing: Boolean
+    )
+
     private val showLineupOverride = MutableStateFlow(false)
     private val toastState = MutableStateFlow(ToastState())
+    private val errorMessage = MutableStateFlow<String?>(null)
+    private val isLoading = MutableStateFlow(true)
     private val isRefreshing = MutableStateFlow(false)
+    private val refreshRequests = MutableSharedFlow<TeamId>(extraBufferCapacity = 1)
 
     val uiState: StateFlow<LineupUiState> = getSelectedTeamUseCase()
+        .distinctUntilChanged()
         .flatMapLatest { teamId ->
+            // ViewModel이 유지된 상태로 팀을 변경해도 이전 팀의 일시적인 UI 상태를 넘기지 않습니다.
+            showLineupOverride.value = false
+            toastState.value = ToastState()
+            errorMessage.value = null
+            isLoading.value = teamId != null
+            isRefreshing.value = false
+
             if (teamId == null) {
-                flowOf(LineupUiState(teamId = null))
+                flowOf(LineupUiState(teamId = null, isLoading = false))
             } else {
                 val team = getTeamUseCase(teamId)
                 val teamEnglishName = team?.englishFullName ?: ""
                 val teamShortName = team?.shortName ?: ""
 
-                flow {
-                    // 스케줄 동기화가 끝난 뒤 라인업을 동기화해야 게임 정보 조합에 최신 값이 전달됩니다.
-                    getTeamGameScheduleUseCase(teamId)
-                    val playersFlow = getLineupUseCase(teamId)
-                    val gameInfoFlow = getLineupGameInfoUseCase(teamId)
+                merge(
+                    flowOf(false),
+                    refreshRequests
+                        .filter { requestedTeamId -> requestedTeamId == teamId }
+                        .map { true }
+                ).flatMapLatest { forceRefresh ->
+                    flow {
+                        isLoading.value = true
+                        errorMessage.value = null
 
-                    emitAll(
-                        combine(
-                            playersFlow,
-                            gameInfoFlow,
-                            showLineupOverride,
+                        // 새로고침도 최초 로드와 동일한 순서를 사용해 실패 후 관찰을 다시 시작합니다.
+                        getTeamGameScheduleUseCase(teamId, forceRefresh)
+                        val playersFlow = getLineupUseCase(teamId, forceRefresh)
+                        val gameInfoFlow = getLineupGameInfoUseCase(teamId)
+                        isLoading.value = false
+                        isRefreshing.value = false
+
+                        val feedbackFlow = combine(
                             toastState,
+                            errorMessage,
+                            isLoading,
                             isRefreshing
-                        ) { players, gameInfo, override, toast, refreshing ->
-                            val opponentTeamName =
-                                gameInfo?.gameInfo?.opponentTeamId?.let { opponentId ->
-                                    getTeamUseCase(opponentId)?.shortName
-                                }
-                            val recentOpponentTeamName =
-                                gameInfo?.recentGameInfo?.opponentTeamId?.let { opponentId ->
-                                    getTeamUseCase(opponentId)?.shortName
-                                }
-
-                            LineupUiState(
-                                teamId = teamId,
-                                teamEnglishName = teamEnglishName,
-                                teamShortName = teamShortName,
-                                opponentTeamName = opponentTeamName,
-                                recentOpponentTeamName = recentOpponentTeamName,
-                                players = players,
-                                gameInfo = gameInfo,
-                                showLineupOverride = override,
-                                toastMessage = toast.message,
-                                isToastVisible = toast.isVisible,
-                                isRefreshing = refreshing
-                            )
+                        ) { toast, error, loading, refreshing ->
+                            FeedbackState(toast, error, loading, refreshing)
                         }
-                    )
-                }.catch { throwable ->
-                    emit(
-                        LineupUiState(
-                            teamId = teamId,
-                            teamEnglishName = teamEnglishName,
-                            teamShortName = teamShortName,
-                            errorMessage = throwable.message ?: "라인업을 불러오지 못했습니다."
+
+                        emitAll(
+                            combine(
+                                playersFlow,
+                                gameInfoFlow,
+                                showLineupOverride,
+                                feedbackFlow
+                            ) { players, gameInfo, override, feedback ->
+                                val opponentTeamName =
+                                    gameInfo?.gameInfo?.opponentTeamId?.let { opponentId ->
+                                        getTeamUseCase(opponentId)?.shortName
+                                    }
+                                val recentOpponentTeamName =
+                                    gameInfo?.recentGameInfo?.opponentTeamId?.let { opponentId ->
+                                        getTeamUseCase(opponentId)?.shortName
+                                    }
+
+                                LineupUiState(
+                                    teamId = teamId,
+                                    teamEnglishName = teamEnglishName,
+                                    teamShortName = teamShortName,
+                                    opponentTeamName = opponentTeamName,
+                                    recentOpponentTeamName = recentOpponentTeamName,
+                                    players = players,
+                                    gameInfo = gameInfo,
+                                    showLineupOverride = override,
+                                    toastMessage = feedback.toast.message,
+                                    isToastVisible = feedback.toast.isVisible,
+                                    isLoading = feedback.isLoading,
+                                    isRefreshing = feedback.isRefreshing,
+                                    errorMessage = feedback.errorMessage
+                                )
+                            }
                         )
-                    )
+                    }.catch { throwable ->
+                        errorMessage.value = throwable.message
+                            ?: "라인업을 불러오지 못했습니다."
+                        isLoading.value = false
+                        isRefreshing.value = false
+
+                        emitAll(
+                            combine(errorMessage, isLoading) { error, loading ->
+                                LineupUiState(
+                                    teamId = teamId,
+                                    teamEnglishName = teamEnglishName,
+                                    teamShortName = teamShortName,
+                                    isLoading = loading,
+                                    errorMessage = error
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -138,26 +188,18 @@ class LineupViewModel(
         toastState.update { it.copy(isVisible = false) }
     }
 
+    fun dismissError() {
+        errorMessage.value = null
+    }
+
     fun refresh() {
         val teamId = uiState.value.teamId ?: return
-        if (isRefreshing.value) return
+        if (isLoading.value) return
 
+        isLoading.value = true
         isRefreshing.value = true
         viewModelScope.launch {
-            try {
-                getTeamGameScheduleUseCase(teamId, forceRefresh = true)
-                getLineupUseCase(teamId, forceRefresh = true)
-                getLineupGameInfoUseCase(teamId).first()
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (throwable: Throwable) {
-                toastState.value = ToastState(
-                    message = throwable.message ?: "라인업을 새로고침하지 못했습니다.",
-                    isVisible = true
-                )
-            } finally {
-                isRefreshing.value = false
-            }
+            refreshRequests.emit(teamId)
         }
     }
 
