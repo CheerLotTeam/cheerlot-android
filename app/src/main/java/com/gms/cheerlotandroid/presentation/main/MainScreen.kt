@@ -179,7 +179,7 @@ private fun MainBottomBar(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.background(GrayScaleColor.GrayWhite)
+        modifier = modifier.background(Color.White)
     ) {
         if (miniPlayerState != null) {
             Box(
