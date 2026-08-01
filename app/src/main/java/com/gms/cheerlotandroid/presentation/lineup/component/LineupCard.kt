@@ -76,7 +76,7 @@ internal fun LineupCard(
                     blendMode = BlendMode.Softlight
                     compositingStrategy = CompositingStrategy.Offscreen
                 },
-            contentScale = ContentScale.FillBounds
+            contentScale = ContentScale.Crop
         )
 
         Column(
