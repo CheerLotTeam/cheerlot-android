@@ -8,6 +8,7 @@ sealed interface CheerLotDialog {
     ) : CheerLotDialog
 
     data class Error(
-        val message: String
+        val message: String,
+        val onRetry: (() -> Unit)? = null
     ) : CheerLotDialog
 }

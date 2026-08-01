@@ -23,11 +23,25 @@ fun CheerLotDialogHost(presentationState: CheerLotPresentationState) {
 
         is CheerLotDialog.Error -> AlertDialog(
             onDismissRequest = presentationState::dismissDialog,
-            title = { Text("Error") },
+            title = { Text("오류") },
             text = { Text(dialog.message) },
             confirmButton = {
-                TextButton(onClick = presentationState::dismissDialog) { Text("확인") }
+                TextButton(
+                    onClick = {
+                        presentationState.dismissDialog()
+                        dialog.onRetry?.invoke()
+                    }
+                ) {
+                    Text(if (dialog.onRetry == null) "확인" else "다시 시도")
+                }
             },
+            dismissButton = dialog.onRetry?.let {
+                {
+                    TextButton(onClick = presentationState::dismissDialog) {
+                        Text("취소")
+                    }
+                }
+            }
         )
 
         null -> Unit
