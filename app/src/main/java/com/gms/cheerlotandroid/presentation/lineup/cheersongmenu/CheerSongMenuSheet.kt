@@ -1,4 +1,4 @@
-package com.gms.cheerlotandroid.presentation.cheersongmenu
+package com.gms.cheerlotandroid.presentation.lineup.cheersongmenu
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -20,7 +20,7 @@ import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.cheersong.CheerSongInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
-import com.gms.cheerlotandroid.presentation.cheersongmenu.component.CheerSongMenuCell
+import com.gms.cheerlotandroid.presentation.lineup.cheersongmenu.component.CheerSongMenuCell
 
 @Composable
 internal fun CheerSongMenuSheet(

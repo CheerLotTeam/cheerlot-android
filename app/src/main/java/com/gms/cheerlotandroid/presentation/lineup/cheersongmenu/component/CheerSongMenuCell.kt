@@ -1,4 +1,4 @@
-package com.gms.cheerlotandroid.presentation.cheersongmenu.component
+package com.gms.cheerlotandroid.presentation.lineup.cheersongmenu.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
