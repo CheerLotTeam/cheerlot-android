@@ -1,135 +1,172 @@
 package com.gms.cheerlotandroid.design.component
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.preview.DevicePreviews
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 
-private val TOP_APP_BAR_HEIGHT = 46.dp
-private val DEFAULT_HORIZONTAL_PADDING = 20.dp
-private val LARGE_TITLE_HORIZONTAL_PADDING = 16.dp
+// actions이 비어있을 때 navigationIcon과 같은 폭의 투명 Spacer를 넣어 폭을 맞춰줍니다.
+private val ICON_BUTTON_SIZE = 48.dp
 
-// enum dispatch 대신 leading/center/trailing 슬롯을 받는 Compose 관용 방식으로 구성했습니다.
-// center는 leading/trailing 폭과 무관하게 바 전체 기준 정중앙에 옵니다.
-// 상태바 등 safe area 처리는 이 컴포넌트가 아니라 화면(root) 쪽 책임입니다.
+// leading/center/trailing을 직접 그리는 대신 Material3의 TopAppBar/CenterAlignedTopAppBar에 위임합니다.
+// 화면 자신의 Scaffold(topBar = ...)에 넣는 것이 기본 사용법입니다.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBar(
     modifier: Modifier = Modifier,
-    horizontalPadding: Dp = DEFAULT_HORIZONTAL_PADDING,
-    leading: (@Composable () -> Unit)? = null,
-    center: (@Composable () -> Unit)? = null,
-    trailing: (@Composable () -> Unit)? = null
+    centered: Boolean = false,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
+    navigationIcon: @Composable () -> Unit = {},
+    title: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {}
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(TOP_APP_BAR_HEIGHT)
-            .padding(horizontal = horizontalPadding)
-    ) {
-        if (leading != null) {
-            Box(modifier = Modifier.align(Alignment.CenterStart)) { leading() }
-        }
-        if (center != null) {
-            Box(modifier = Modifier.align(Alignment.Center)) { center() }
-        }
-        if (trailing != null) {
-            Box(modifier = Modifier.align(Alignment.CenterEnd)) { trailing() }
-        }
+    // 높이는 Material3 기본값(TopAppBarDefaults.TopAppBarExpandedHeight, 64dp)을 그대로 씁니다.
+    if (centered) {
+        CenterAlignedTopAppBar(
+            modifier = modifier,
+            windowInsets = windowInsets,
+            colors = transparentTopAppBarColors(),
+            navigationIcon = navigationIcon,
+            title = title,
+            actions = actions
+        )
+    } else {
+        TopAppBar(
+            modifier = modifier,
+            windowInsets = windowInsets,
+            colors = transparentTopAppBarColors(),
+            navigationIcon = navigationIcon,
+            title = title,
+            actions = actions
+        )
     }
 }
 
 // leading에 LargeTitle과 trailing에 프로필 버튼을 가지는 TopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBarTitleWithProfile(
     title: String,
     onProfileClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     CustomTopAppBar(
         modifier = modifier,
-        horizontalPadding = LARGE_TITLE_HORIZONTAL_PADDING,
-        leading = { LargeTitleText(title) },
-        trailing = { ProfileIconButton(onProfileClick) }
+        windowInsets = windowInsets,
+        title = { LargeTitleText(title) },
+        actions = { ProfileIconButton(onProfileClick) }
     )
 }
 
 // leading에만 LargeTitle을 가지는 TopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBarLargeTitle(
     title: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     CustomTopAppBar(
         modifier = modifier,
-        horizontalPadding = LARGE_TITLE_HORIZONTAL_PADDING,
-        leading = { LargeTitleText(title) }
+        windowInsets = windowInsets,
+        title = { LargeTitleText(title) }
     )
 }
 
 // leading에 cancel 버튼과 center에 경기 정보를 가지는 TopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBarGameInfo(
     date: String,
     teams: String,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     CustomTopAppBar(
         modifier = modifier,
-        leading = { CloseIconButton(onClose) },
-        center = { GameInfoText(date = date, teams = teams) }
+        centered = true,
+        windowInsets = windowInsets,
+        navigationIcon = { CloseIconButton(onClose) },
+        title = { GameInfoText(date = date, teams = teams) },
+        actions = { NavigationIconSpacer() }
     )
 }
 
 // leading에 back 버튼과 center에 inlineTitle을 가지는 TopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBarBackWithTitle(
     title: String,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     CustomTopAppBar(
         modifier = modifier,
-        leading = { BackIconButton(onBack) },
-        center = { InlineTitleText(title) }
+        centered = true,
+        windowInsets = windowInsets,
+        navigationIcon = { BackIconButton(onBack) },
+        title = { InlineTitleText(title) },
+        actions = { NavigationIconSpacer() }
     )
 }
 
 // leading에 cancel 버튼과 center에 inlineTitle, trailing에 check 버튼을 가지는 TopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopAppBarEditMode(
     title: String,
     onClose: () -> Unit,
     onCheck: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     CustomTopAppBar(
         modifier = modifier,
-        leading = { CloseIconButton(onClose) },
-        center = { InlineTitleText(title) },
-        trailing = { CheckIconButton(onCheck) }
+        centered = true,
+        windowInsets = windowInsets,
+        navigationIcon = { CloseIconButton(onClose) },
+        title = { InlineTitleText(title) },
+        actions = { CheckIconButton(onCheck) }
     )
+}
+
+@Composable
+private fun transparentTopAppBarColors(): TopAppBarColors =
+    TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+
+@Composable
+private fun NavigationIconSpacer() {
+    Spacer(modifier = Modifier.size(ICON_BUTTON_SIZE))
 }
 
 @Composable
@@ -190,42 +227,46 @@ private fun GameInfoText(date: String, teams: String) {
 
 @Composable
 private fun BackIconButton(onClick: () -> Unit) {
-    Icon(
-        imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
-        contentDescription = "뒤로가기",
-        tint = GrayScaleColor.Gray800,
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
+            contentDescription = "뒤로가기",
+            tint = GrayScaleColor.Gray800
+        )
+    }
 }
 
 @Composable
 private fun CloseIconButton(onClick: () -> Unit) {
-    Icon(
-        imageVector = Icons.Filled.Close,
-        contentDescription = "닫기",
-        tint = GrayScaleColor.Gray800,
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.Filled.Close,
+            contentDescription = "닫기",
+            tint = GrayScaleColor.Gray800
+        )
+    }
 }
 
 @Composable
 private fun CheckIconButton(onClick: () -> Unit) {
-    Icon(
-        imageVector = Icons.Filled.Check,
-        contentDescription = "완료",
-        tint = GrayScaleColor.Gray800,
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.Filled.Check,
+            contentDescription = "완료",
+            tint = GrayScaleColor.Gray800
+        )
+    }
 }
 
 @Composable
 private fun ProfileIconButton(onClick: () -> Unit) {
-    Icon(
-        imageVector = Icons.Filled.AccountCircle,
-        contentDescription = "프로필",
-        tint = GrayScaleColor.Gray800,
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = Icons.Filled.AccountCircle,
+            contentDescription = "프로필",
+            tint = GrayScaleColor.Gray800
+        )
+    }
 }
 
 @DevicePreviews

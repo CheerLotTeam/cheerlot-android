@@ -1,17 +1,16 @@
 package com.gms.cheerlotandroid.presentation.onboarding
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -79,26 +78,25 @@ private fun TeamSelectContent(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .safeDrawingPadding()
-    ) {
-        if (mode.showsTopBar) {
-            CustomTopAppBarEditMode(
-                title = mode.navigationTitle,
-                onClose = onClose,
-                onCheck = onCompleteClick
-            )
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            if (mode.showsTopBar) {
+                CustomTopAppBarEditMode(
+                    title = mode.navigationTitle,
+                    onClose = onClose,
+                    onCheck = onCompleteClick
+                )
+            }
         }
-
+    ) { innerPadding ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 28.dp)
-                .padding(top = if (mode.showsTopBar) 20.dp else 32.dp, bottom = 12.dp),
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 27.dp)
+                .padding(top = if (mode.showsTopBar) 15.dp else 32.dp, bottom = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {

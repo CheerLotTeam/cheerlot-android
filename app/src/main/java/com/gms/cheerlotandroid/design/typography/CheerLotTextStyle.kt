@@ -31,7 +31,6 @@ object CheerLotTextStyle {
     val SB4 = pretendard(weight = FontWeight.SemiBold, size = 22, lineHeight = 1.3f, letterSpacing = -0.04f)
     val SB5 = pretendard(weight = FontWeight.SemiBold, size = 20, lineHeight = 1.3f, letterSpacing = -0.04f)
     val SB5LineupName = pretendard(weight = FontWeight.SemiBold, size = 20, lineHeight = 1.0f, letterSpacing = 0f)
-    val SB5LineupNameCompact = pretendard(weight = FontWeight.SemiBold, size = 18, lineHeight = 1.0f, letterSpacing = 0f)
     val SB6 = pretendard(weight = FontWeight.SemiBold, size = 18, lineHeight = 1.3f, letterSpacing = -0.04f)
     val SB7 = pretendard(weight = FontWeight.SemiBold, size = 16, lineHeight = 1.3f, letterSpacing = -0.04f)
     val SB8 = pretendard(weight = FontWeight.SemiBold, size = 14, lineHeight = 1.3f, letterSpacing = -0.04f)
@@ -40,7 +39,6 @@ object CheerLotTextStyle {
 
     // Pretendard Medium
     val M0 = pretendard(weight = FontWeight.Medium, size = 28, lineHeight = 1.3f, letterSpacing = 0f)
-    val M0LineupCompact = pretendard(weight = FontWeight.Medium, size = 24, lineHeight = 1.3f, letterSpacing = 0f)
     val M1 = pretendard(weight = FontWeight.Medium, size = 20, lineHeight = 1.3f, letterSpacing = -0.04f)
     val M2 = pretendard(weight = FontWeight.Medium, size = 18, lineHeight = 1.3f, letterSpacing = -0.04f)
     val M3 = pretendard(weight = FontWeight.Medium, size = 16, lineHeight = 1.3f, letterSpacing = -0.04f)
@@ -48,7 +46,6 @@ object CheerLotTextStyle {
     val M5 = pretendard(weight = FontWeight.Medium, size = 12, lineHeight = 1.3f, letterSpacing = -0.04f)
     val M5GameState = pretendard(weight = FontWeight.Medium, size = 12, lineHeight = 1.2f, letterSpacing = 0f)
     val M5Position = pretendard(weight = FontWeight.Medium, size = 12, lineHeight = 1.0f, letterSpacing = -0.05f)
-    val M5PositionCompact = pretendard(weight = FontWeight.Medium, size = 10, lineHeight = 1.0f, letterSpacing = -0.05f)
     val M6 = pretendard(weight = FontWeight.Medium, size = 10, lineHeight = 1.2f, letterSpacing = 0f)
 
     // Pretendard Regular
