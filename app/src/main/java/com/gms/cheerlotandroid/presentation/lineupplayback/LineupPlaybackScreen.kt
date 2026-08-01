@@ -15,6 +15,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -76,15 +77,26 @@ internal fun LineupPlaybackScreen(
                 )
             }
         ) { innerPadding ->
-            LineupPlaybackContent(
-                state = state,
-                colors = colors,
-                onTogglePlayback = onTogglePlayback,
-                onPageChanged = onPageChanged,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            )
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = colors.primaryColor)
+                }
+            } else {
+                LineupPlaybackContent(
+                    state = state,
+                    colors = colors,
+                    onTogglePlayback = onTogglePlayback,
+                    onPageChanged = onPageChanged,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                )
+            }
         }
     }
 }
@@ -197,5 +209,6 @@ private val previewState = LineupPlaybackUiState(
         )
     },
     startIndex = 0,
-    isPlaying = false
+    isPlaying = false,
+    isLoading = false
 )

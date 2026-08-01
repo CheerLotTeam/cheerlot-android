@@ -15,7 +15,6 @@ internal data class LineupPlaybackColors(
     val cardStrokeColor: Color,
     val cardContentsColor: Color,
     val battingOrderTextColor: Color,
-    val sideCardFillColor: Color,
     val selectedPageIndicatorColor: Color,
     val unselectedPageIndicatorColor: Color
 )
@@ -40,7 +39,6 @@ internal fun TeamColors.toLineupPlaybackColors(teamId: TeamId): LineupPlaybackCo
         cardStrokeColor = primaryPalette.color200,
         cardContentsColor = primaryPalette.color200,
         battingOrderTextColor = if (primary == secondary) GrayScaleColor.GrayWhite else secondary,
-        sideCardFillColor = primaryPalette.color100,
         selectedPageIndicatorColor = primaryPalette.color300,
         unselectedPageIndicatorColor = if (
             teamId.value.equals("HANWHA", ignoreCase = true) ||

@@ -139,6 +139,16 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
         is CheerLotFullScreen.LineupPlayback -> {
             // 전체 화면 높이로 표시하되 사용자가 드래그해 Sheet를 내릴 수 없도록 합니다.
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val scope = rememberCoroutineScope()
+            val dismissWithAnimation: () -> Unit = {
+                scope.launch {
+                    sheetState.hide()
+                    if (!sheetState.isVisible) {
+                        presentationState.dismissFullScreen()
+                    }
+                }
+            }
+
             ModalBottomSheet(
                 onDismissRequest = presentationState::dismissFullScreen,
                 sheetState = sheetState,
@@ -151,7 +161,7 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
             ) {
                 LineupPlaybackDummySheet(
                     fullScreen = fullScreen,
-                    onClose = presentationState::dismissFullScreen
+                    onClose = dismissWithAnimation
                 )
             }
         }
@@ -177,7 +187,8 @@ private fun LineupPlaybackDummySheet(
                 teamsText = "삼성 vs LG",
                 items = items,
                 startIndex = fullScreen.startIndex,
-                isPlaying = isPlaying
+                isPlaying = isPlaying,
+                isLoading = false
             ),
             teamId = teamId,
             onClose = onClose,

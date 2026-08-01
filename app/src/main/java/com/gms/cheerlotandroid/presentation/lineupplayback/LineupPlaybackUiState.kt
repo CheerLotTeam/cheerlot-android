@@ -17,5 +17,6 @@ internal data class LineupPlaybackUiState(
     val teamsText: String = "",
     val items: List<LineupPlaybackItem> = emptyList(),
     val startIndex: Int = 0,
-    val isPlaying: Boolean = false
+    val isPlaying: Boolean = false,
+    val isLoading: Boolean = true
 )
