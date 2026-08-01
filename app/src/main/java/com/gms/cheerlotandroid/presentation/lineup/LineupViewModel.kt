@@ -28,6 +28,10 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
+
+private val seoulZoneId: ZoneId = ZoneId.of("Asia/Seoul")
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LineupViewModel(
@@ -35,7 +39,8 @@ class LineupViewModel(
     private val getLineupUseCase: GetLineupUseCase,
     private val getLineupGameInfoUseCase: GetLineupGameInfoUseCase,
     private val getTeamGameScheduleUseCase: GetTeamGameScheduleUseCase,
-    private val getTeamUseCase: GetTeamUseCase
+    private val getTeamUseCase: GetTeamUseCase,
+    private val currentDateProvider: () -> LocalDate = { LocalDate.now(seoulZoneId) }
 ) : ViewModel() {
 
     private data class ToastState(
@@ -56,16 +61,22 @@ class LineupViewModel(
     private val isLoading = MutableStateFlow(true)
     private val isRefreshing = MutableStateFlow(false)
     private val refreshRequests = MutableSharedFlow<TeamId>(extraBufferCapacity = 1)
+    private var hasHandledTeam = false
+    private var lastTeamId: TeamId? = null
 
     val uiState: StateFlow<LineupUiState> = getSelectedTeamUseCase()
         .distinctUntilChanged()
         .flatMapLatest { teamId ->
-            // ViewModel이 유지된 상태로 팀을 변경해도 이전 팀의 일시적인 UI 상태를 넘기지 않습니다.
-            showLineupOverride.value = false
-            toastState.value = ToastState()
-            errorMessage.value = null
-            isLoading.value = teamId != null
-            isRefreshing.value = false
+            // 선택 팀이 실제로 변경된 경우에만 이전 팀의 UI 상태를 초기화합니다.
+            if (!hasHandledTeam || lastTeamId != teamId) {
+                hasHandledTeam = true
+                lastTeamId = teamId
+                showLineupOverride.value = false
+                toastState.value = ToastState()
+                errorMessage.value = null
+                isLoading.value = teamId != null
+                isRefreshing.value = false
+            }
 
             if (teamId == null) {
                 flowOf(LineupUiState(teamId = null, isLoading = false))
@@ -75,19 +86,20 @@ class LineupViewModel(
                 val teamShortName = team?.shortName ?: ""
 
                 merge(
-                    flowOf(false),
+                    flowOf(Unit),
                     refreshRequests
                         .filter { requestedTeamId -> requestedTeamId == teamId }
-                        .map { true }
-                ).flatMapLatest { forceRefresh ->
+                        .map { Unit }
+                ).flatMapLatest {
                     flow {
                         isLoading.value = true
                         errorMessage.value = null
 
                         // 새로고침도 최초 로드와 동일한 순서를 사용해 실패 후 관찰을 다시 시작합니다.
-                        getTeamGameScheduleUseCase(teamId, forceRefresh)
-                        val playersFlow = getLineupUseCase(teamId, forceRefresh)
+                        getTeamGameScheduleUseCase(teamId)
+                        val playersFlow = getLineupUseCase(teamId)
                         val gameInfoFlow = getLineupGameInfoUseCase(teamId)
+                        val todayDate = currentDateProvider()
                         isLoading.value = false
                         isRefreshing.value = false
 
@@ -124,6 +136,7 @@ class LineupViewModel(
                                     recentOpponentTeamName = recentOpponentTeamName,
                                     players = players,
                                     gameInfo = gameInfo,
+                                    todayDate = todayDate,
                                     showLineupOverride = override,
                                     toastMessage = feedback.toast.message,
                                     isToastVisible = feedback.toast.isVisible,
@@ -145,6 +158,7 @@ class LineupViewModel(
                                     teamId = teamId,
                                     teamEnglishName = teamEnglishName,
                                     teamShortName = teamShortName,
+                                    todayDate = currentDateProvider(),
                                     isLoading = loading,
                                     errorMessage = error
                                 )

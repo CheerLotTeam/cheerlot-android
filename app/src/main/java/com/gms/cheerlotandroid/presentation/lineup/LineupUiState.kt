@@ -5,7 +5,6 @@ import com.gms.cheerlotandroid.domain.model.team.GameStatus
 import com.gms.cheerlotandroid.domain.model.team.LineupGameInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -17,6 +16,7 @@ data class LineupUiState(
     val recentOpponentTeamName: String? = null,
     val players: List<PlayerInfo> = emptyList(),
     val gameInfo: LineupGameInfo? = null,
+    val todayDate: LocalDate? = null,
     val showLineupOverride: Boolean = false,
     val toastMessage: String = "",
     val isToastVisible: Boolean = false,
@@ -41,7 +41,7 @@ data class LineupUiState(
             val date = if (showLineupOverride) {
                 selectedGameInfo.lastGameDate.toKoreanDate()
             } else {
-                LocalDate.now(seoulZoneId).format(koreanDateFormatter)
+                todayDate?.format(koreanDateFormatter).orEmpty()
             }
             val opponent = if (showLineupOverride) {
                 recentOpponentTeamName
@@ -72,7 +72,6 @@ data class LineupUiState(
     }
 
     private companion object {
-        val seoulZoneId: ZoneId = ZoneId.of("Asia/Seoul")
         val koreanDateFormatter: DateTimeFormatter =
             DateTimeFormatter.ofPattern("M월 d일", Locale.KOREAN)
     }
