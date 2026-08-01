@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -19,7 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
-import com.gms.cheerlotandroid.design.team.TeamAsset
+import com.gms.cheerlotandroid.design.color.team.TeamColor
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.team.TeamId
@@ -33,9 +34,11 @@ fun TeamSelectCell(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val asset = TeamAsset.from(team.id)
-    val backgroundColor = if (isSelected) asset.primaryColor else GrayScaleColor.GrayWhite
-    val borderColor = if (isSelected) asset.primaryColor else GrayScaleColor.Gray000
+    val teamColors = remember(team.id) {
+        TeamColor.colorsFor(team.id)
+    }
+    val backgroundColor = if (isSelected) teamColors.primary else GrayScaleColor.GrayWhite
+    val borderColor = if (isSelected) teamColors.primary else GrayScaleColor.Gray000
     val textColor = if (isSelected) GrayScaleColor.GrayWhite else GrayScaleColor.Gray300
 
     Column(

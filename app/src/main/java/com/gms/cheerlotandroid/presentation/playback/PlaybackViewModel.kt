@@ -2,7 +2,6 @@ package com.gms.cheerlotandroid.presentation.playback
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gms.cheerlotandroid.design.team.TeamAsset
 import com.gms.cheerlotandroid.domain.model.playback.RepeatMode
 import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,7 +37,7 @@ internal class PlaybackViewModel(
                 title = song?.title.orEmpty(),
                 playerName = playerName,
                 lyrics = song?.lyrics.orEmpty(),
-                teamInitial = state.teamId?.let { TeamAsset.from(it).assetPrefix.uppercase() }
+                teamInitial = state.teamId?.value?.take(1)
                     ?: playerName.take(1),
                 isPlaying = state.isPlaying,
                 progressMs = state.currentPositionMs,

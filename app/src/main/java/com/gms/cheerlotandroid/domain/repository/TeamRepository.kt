@@ -11,6 +11,9 @@ interface TeamRepository {
     // 전체 팀을 모두 반환합니다.
     fun getAllTeams(): List<TeamInfo>
 
+    // 팀 ID에 해당하는 팀 정보를 반환합니다.
+    fun getTeam(teamId: TeamId): TeamInfo?
+
     // teams row가 없으면 만들어서, team_id를 참조하는 FK가 걸린 테이블에 안전하게 insert할 수 있게 보장합니다.
     suspend fun ensureTeamRow(teamId: TeamId)
 

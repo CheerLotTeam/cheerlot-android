@@ -1,5 +1,6 @@
 package com.gms.cheerlotandroid.app.host
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,32 +19,37 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotFullScreen
-import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
+import com.gms.cheerlotandroid.core.navigation.CheerLotPresentationState
 import com.gms.cheerlotandroid.core.navigation.CheerLotSheet
 import com.gms.cheerlotandroid.presentation.playback.PlaybackScreen
 import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
 
-// navigator.currentSheet/currentFullScreen을 관찰해 실제 modal UI로 그려주는 root host입니다.
+// presentationState의 modal 상태를 관찰해 실제 modal UI로 그려주는 root host입니다.
 // 실제 화면(CheerSongMenuSheet 등)이 생기면 placeholder를 교체합니다.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CheerLotModalHost(navigator: CheerLotNavigator) {
-    val sheet = navigator.currentSheet
+fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
+    val sheet = presentationState.currentSheet
     if (sheet != null) {
-        ModalBottomSheet(onDismissRequest = navigator::dismissSheet) {
+        ModalBottomSheet(onDismissRequest = presentationState::dismissSheet) {
             SheetPlaceholderContent(sheet)
         }
     }
 
-    when (val fullScreen = navigator.currentFullScreen) {
+    when (val fullScreen = presentationState.currentFullScreen) {
         is CheerLotFullScreen.BasePlayback -> {
             val viewModel: PlaybackViewModel =
                 viewModel(factory = LocalAppContainer.current.viewModelFactory)
             val uiState by viewModel.uiState.collectAsState()
+            val closePlayback = {
+                viewModel.close(onClosed = presentationState::dismissFullScreen)
+            }
+
+            BackHandler(onBack = closePlayback)
 
             PlaybackScreen(
                 state = uiState,
-                onClose = { viewModel.close(onClosed = navigator::dismissFullScreen) },
+                onClose = closePlayback,
                 onTogglePlayback = viewModel::togglePlayback,
                 onSeek = viewModel::seek,
                 onPlayNext = viewModel::playNext,
@@ -54,7 +60,8 @@ fun CheerLotModalHost(navigator: CheerLotNavigator) {
         }
 
         is CheerLotFullScreen.LineupPlayback -> {
-            FullScreenPlaceholder(fullScreen, onClose = navigator::dismissFullScreen)
+            BackHandler(onBack = presentationState::dismissFullScreen)
+            FullScreenPlaceholder(fullScreen, onClose = presentationState::dismissFullScreen)
         }
 
         null -> Unit
