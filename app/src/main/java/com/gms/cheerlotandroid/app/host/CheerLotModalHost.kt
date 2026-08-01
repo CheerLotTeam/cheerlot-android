@@ -115,8 +115,20 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
         }
 
         is CheerLotFullScreen.LineupPlayback -> {
-            BackHandler(onBack = presentationState::dismissFullScreen)
-            FullScreenPlaceholder(fullScreen, onClose = presentationState::dismissFullScreen)
+            // 전체 화면 높이로 표시하되 사용자가 드래그해 Sheet를 내릴 수 없도록 합니다.
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ModalBottomSheet(
+                onDismissRequest = presentationState::dismissFullScreen,
+                sheetState = sheetState,
+                sheetGesturesEnabled = false,
+                dragHandle = null,
+                containerColor = MaterialTheme.colorScheme.background
+            ) {
+                FullScreenPlaceholder(
+                    fullScreen = fullScreen,
+                    onClose = presentationState::dismissFullScreen
+                )
+            }
         }
 
         null -> Unit
