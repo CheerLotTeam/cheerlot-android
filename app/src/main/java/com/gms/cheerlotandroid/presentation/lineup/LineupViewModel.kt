@@ -194,7 +194,10 @@ class LineupViewModel(
                 LineupTapAction.GoToPlayback(flatSongIndex(player.cheerSongs.first()))
             }
 
-            else -> LineupTapAction.ShowSongList(player)
+            else -> LineupTapAction.ShowSongList(
+                member = player,
+                startIndex = flatSongIndex(player.cheerSongs.first())
+            )
         }
     }
 

@@ -40,7 +40,7 @@ internal fun CheerSongMenuSheet(
             text = memberName,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 30.dp, bottom = 26.dp),
+                .padding(bottom = 26.dp),
             style = CheerLotTextStyle.SB6,
             color = GrayScaleColor.GrayBlack,
             textAlign = TextAlign.Center,
