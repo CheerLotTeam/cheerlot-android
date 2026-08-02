@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.gms.cheerlotandroid.presentation.appflow.AppFlowViewModel
 import com.gms.cheerlotandroid.presentation.lineup.LineupViewModel
+import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackViewModel
 import com.gms.cheerlotandroid.presentation.main.MainViewModel
 import com.gms.cheerlotandroid.presentation.main.MiniPlayerViewModel
 import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
@@ -52,10 +53,19 @@ class CheerLotViewModelFactory(
                     getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
                     getTeamGameScheduleUseCase = appContainer.getTeamGameScheduleUseCase,
                     getTeamUseCase = appContainer.getTeamUseCase,
+                    playLineupSongsUseCase = appContainer.playLineupSongsUseCase,
                 ) as T
             }
 
-            // LineupPlaybackViewModel: 라인업 UI를 넘겨받은 뒤 연결 예정 (보류)
+            modelClass.isAssignableFrom(LineupPlaybackViewModel::class.java) -> {
+                LineupPlaybackViewModel(
+                    getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getLineupUseCase = appContainer.getLineupUseCase,
+                    getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
+                    getTeamUseCase = appContainer.getTeamUseCase,
+                    audioPlayer = appContainer.audioPlayer,
+                ) as T
+            }
 
             modelClass.isAssignableFrom(TeamMembersViewModel::class.java) -> {
                 TeamMembersViewModel(

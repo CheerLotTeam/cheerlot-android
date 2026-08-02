@@ -48,6 +48,7 @@ import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.LineupScreen
+import com.gms.cheerlotandroid.presentation.lineup.LineupTapAction
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersScreen
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 
@@ -55,7 +56,7 @@ import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 fun MainScreen(
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
     onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
-    onOpenCheerSongMenu: (member: PlayerInfo, startIndex: Int) -> Unit = { _, _ -> },
+    onOpenCheerSongMenu: (action: LineupTapAction.ShowSongList) -> Unit = {},
     onOpenLineupChange: (member: PlayerInfo) -> Unit = {},
     onShowDialog: (CheerLotDialog) -> Unit = {},
     onOpenSettings: () -> Unit = {},
@@ -94,7 +95,7 @@ private fun MainContent(
     tabColor: Color,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
     onOpenLineupPlayback: (startIndex: Int) -> Unit,
-    onOpenCheerSongMenu: (member: PlayerInfo, startIndex: Int) -> Unit,
+    onOpenCheerSongMenu: (action: LineupTapAction.ShowSongList) -> Unit,
     onOpenLineupChange: (member: PlayerInfo) -> Unit,
     onShowDialog: (CheerLotDialog) -> Unit,
     onOpenSettings: () -> Unit,
@@ -131,14 +132,8 @@ private fun MainContent(
                 tabColor = tabColor,
                 miniPlayerState = miniPlayerState,
                 onMiniPlayerClick = {
-                    when (val target = miniPlayerViewModel.reopenTarget()) {
-                        is MiniPlayerReopenTarget.Base ->
-                            onOpenBasePlayback(target.teamId, target.cheerSongId, target.playerName)
-
-                        is MiniPlayerReopenTarget.Lineup ->
-                            onOpenLineupPlayback(target.startIndex)
-
-                        null -> Unit
+                    miniPlayerViewModel.reopenTarget()?.let { target ->
+                        onOpenBasePlayback(target.teamId, target.cheerSongId, target.playerName)
                     }
                 },
                 onMiniPlayerPlayClick = miniPlayerViewModel::onPlayClick,

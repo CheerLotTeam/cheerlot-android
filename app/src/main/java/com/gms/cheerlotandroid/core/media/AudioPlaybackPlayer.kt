@@ -116,6 +116,12 @@ class AudioPlaybackPlayer(context: Context) : AudioPlayer {
         playCurrentSong()
     }
 
+    override fun playAt(index: Int) {
+        if (index !in queue.indices || index == currentIndex) return
+        currentIndex = index
+        playCurrentSong()
+    }
+
     override fun playNext() {
         if (queue.isEmpty()) return
 

@@ -7,6 +7,7 @@ import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
+import com.gms.cheerlotandroid.domain.usecase.playback.PlayLineupSongsUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamGameScheduleUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamUseCase
@@ -40,6 +41,7 @@ class LineupViewModel(
     private val getLineupGameInfoUseCase: GetLineupGameInfoUseCase,
     private val getTeamGameScheduleUseCase: GetTeamGameScheduleUseCase,
     private val getTeamUseCase: GetTeamUseCase,
+    private val playLineupSongsUseCase: PlayLineupSongsUseCase,
     private val currentDateProvider: () -> LocalDate = { LocalDate.now(seoulZoneId) }
 ) : ViewModel() {
 
@@ -191,14 +193,34 @@ class LineupViewModel(
             }
 
             player.cheerSongs.size == 1 -> {
-                LineupTapAction.GoToPlayback(flatSongIndex(player.cheerSongs.first()))
+                val startIndex = flatSongIndex(player.cheerSongs.first())
+                startPlayback(startAt = startIndex)
+                LineupTapAction.GoToPlayback(startIndex)
             }
 
-            else -> LineupTapAction.ShowSongList(
-                member = player,
-                startIndex = flatSongIndex(player.cheerSongs.first())
-            )
+            else -> {
+                val (songs, playerNames) = flatSongsAndNames()
+                LineupTapAction.ShowSongList(
+                    member = player,
+                    startIndex = flatSongIndex(player.cheerSongs.first()),
+                    queueSongs = songs,
+                    queuePlayerNames = playerNames
+                )
+            }
         }
+    }
+
+    private fun startPlayback(startAt: Int) {
+        val teamId = uiState.value.teamId ?: return
+        val (songs, playerNames) = flatSongsAndNames()
+        if (songs.isEmpty()) return
+        playLineupSongsUseCase(songs = songs, playerNames = playerNames, startAt = startAt, teamId = teamId)
+    }
+
+    // 모든 선수의 응원가를 타순대로 이어붙인 (곡, 선수명) 리스트입니다. 선수명은 곡 개수만큼 반복됩니다.
+    private fun flatSongsAndNames(): Pair<List<CheerSongInfo>, List<String>> {
+        val songs = uiState.value.players.flatMap { player -> player.cheerSongs.map { it to player.name } }
+        return songs.map { it.first } to songs.map { it.second }
     }
 
     fun dismissToast() {
@@ -222,7 +244,7 @@ class LineupViewModel(
 
     // 모든 선수의 응원가를 타순대로 이어붙였을 때 특정 곡이 몇 번째인지 계산합니다 (캐러셀 인덱스용)
     private fun flatSongIndex(song: CheerSongInfo): Int {
-        val flatSongs = uiState.value.players.flatMap { it.cheerSongs }
-        return flatSongs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
+        val (songs, _) = flatSongsAndNames()
+        return songs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
     }
 }

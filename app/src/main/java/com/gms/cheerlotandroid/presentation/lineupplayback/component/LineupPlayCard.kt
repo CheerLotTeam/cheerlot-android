@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -150,15 +151,13 @@ private fun CardHeader(
                 )
             }
         }
-        if (!isPlaying) {
-            Icon(
-                imageVector = Icons.Filled.Pause,
-                contentDescription = "일시 정지",
-                tint = colors.cardContentsColor,
-                modifier = Modifier
-                    .padding(top = 3.6.dp)
-            )
-        }
+        Icon(
+            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+            contentDescription = if (isPlaying) "일시 정지" else "재생",
+            tint = colors.cardContentsColor,
+            modifier = Modifier
+                .padding(top = 3.6.dp)
+        )
     }
 }
 

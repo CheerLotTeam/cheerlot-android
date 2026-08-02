@@ -1,6 +1,7 @@
 package com.gms.cheerlotandroid.presentation.lineupplayback
 
 import androidx.compose.runtime.Immutable
+import com.gms.cheerlotandroid.domain.model.team.TeamId
 
 @Immutable
 internal data class LineupPlaybackItem(
@@ -13,6 +14,7 @@ internal data class LineupPlaybackItem(
 
 @Immutable
 internal data class LineupPlaybackUiState(
+    val teamId: TeamId? = null,
     val gameDate: String = "",
     val teamsText: String = "",
     val items: List<LineupPlaybackItem> = emptyList(),

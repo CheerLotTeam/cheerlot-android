@@ -24,6 +24,10 @@ interface AudioPlayer {
         mode: PlaybackMode
     )
 
+    // 큐 안의 임의 인덱스로 바로 이동합니다. 라인업 재생 화면의 카드 스와이프처럼, 한 번에 여러 곡을
+    // 건너뛸 수 있는 경우에 씁니다. 범위를 벗어나거나 이미 재생 중인 인덱스면 아무 동작도 하지 않습니다.
+    fun playAt(index: Int)
+
     // 다음곡. 모드별 스킵/wrap 정책은 구현체(AudioPlaybackPlayer)를 따릅니다.
     fun playNext()
 
