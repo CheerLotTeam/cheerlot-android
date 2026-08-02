@@ -1,15 +1,14 @@
 package com.gms.cheerlotandroid.app.host
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -17,8 +16,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,8 +31,12 @@ import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.cheersongmenu.CheerSongMenuSheet
 import com.gms.cheerlotandroid.presentation.lineupchange.LineupChangeSheet
+import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackItem
+import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackScreen
+import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackUiState
 import com.gms.cheerlotandroid.presentation.playback.PlaybackScreen
 import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
+import kotlinx.coroutines.launch
 
 // presentationState의 modal 상태를 관찰해 실제 modal UI로 그려주는 root host입니다.
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,8 +45,12 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
     val sheet = presentationState.currentSheet
     when (sheet) {
         is CheerLotSheet.CheerSongList -> {
+            val sheetState = rememberModalBottomSheetState()
+            val scope = rememberCoroutineScope()
+
             ModalBottomSheet(
                 onDismissRequest = presentationState::dismissSheet,
+                sheetState = sheetState,
                 containerColor = MaterialTheme.colorScheme.background
             ) {
                 TeamTheme(teamId = sheet.member.teamId) {
@@ -55,11 +62,16 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
                                 it.id == cheerSong.id
                             }
                             if (songIndex >= 0) {
-                                presentationState.showFullScreen(
-                                    CheerLotFullScreen.LineupPlayback(
-                                        startIndex = sheet.startIndex + songIndex
-                                    )
-                                )
+                                scope.launch {
+                                    sheetState.hide()
+                                    if (!sheetState.isVisible) {
+                                        presentationState.showFullScreen(
+                                            CheerLotFullScreen.LineupPlayback(
+                                                startIndex = sheet.startIndex + songIndex
+                                            )
+                                        )
+                                    }
+                                }
                             }
                         }
                     )
@@ -69,6 +81,16 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
 
         is CheerLotSheet.LineupChange -> {
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val scope = rememberCoroutineScope()
+            val dismissWithAnimation: () -> Unit = {
+                scope.launch {
+                    sheetState.hide()
+                    if (!sheetState.isVisible) {
+                        presentationState.dismissSheet()
+                    }
+                }
+            }
+
             ModalBottomSheet(
                 onDismissRequest = presentationState::dismissSheet,
                 sheetState = sheetState,
@@ -77,7 +99,7 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
             ) {
                 LineupChangeDummySheet(
                     sheet = sheet,
-                    onDismiss = presentationState::dismissSheet
+                    onDismiss = dismissWithAnimation
                 )
             }
         }
@@ -117,21 +139,81 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
         is CheerLotFullScreen.LineupPlayback -> {
             // 전체 화면 높이로 표시하되 사용자가 드래그해 Sheet를 내릴 수 없도록 합니다.
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val scope = rememberCoroutineScope()
+            val dismissWithAnimation: () -> Unit = {
+                scope.launch {
+                    sheetState.hide()
+                    if (!sheetState.isVisible) {
+                        presentationState.dismissFullScreen()
+                    }
+                }
+            }
+
             ModalBottomSheet(
                 onDismissRequest = presentationState::dismissFullScreen,
                 sheetState = sheetState,
                 sheetGesturesEnabled = false,
                 dragHandle = null,
-                containerColor = MaterialTheme.colorScheme.background
+                containerColor = MaterialTheme.colorScheme.background,
+                contentWindowInsets = {
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+                }
             ) {
-                FullScreenPlaceholder(
+                LineupPlaybackDummySheet(
                     fullScreen = fullScreen,
-                    onClose = presentationState::dismissFullScreen
+                    onClose = dismissWithAnimation
                 )
             }
         }
 
         null -> Unit
+    }
+}
+
+// 라인업 재생 임시뷰
+@Composable
+private fun LineupPlaybackDummySheet(
+    fullScreen: CheerLotFullScreen.LineupPlayback,
+    onClose: () -> Unit
+) {
+    val teamId = remember { TeamId("SAMSUNG") }
+    var isPlaying by remember { mutableStateOf(false) }
+    val items = remember { lineupPlaybackDummyItems() }
+
+    TeamTheme(teamId = teamId) {
+        LineupPlaybackScreen(
+            state = LineupPlaybackUiState(
+                gameDate = "8월 1일",
+                teamsText = "삼성 vs LG",
+                items = items,
+                startIndex = fullScreen.startIndex,
+                isPlaying = isPlaying,
+                isLoading = false
+            ),
+            teamId = teamId,
+            onClose = onClose,
+            onTogglePlayback = { isPlaying = !isPlaying },
+            onPageChanged = {}
+        )
+    }
+}
+
+// 라인업 재생 임시 데이터
+private fun lineupPlaybackDummyItems(): List<LineupPlaybackItem> {
+    val memberNames = listOf(
+        "구자욱", "김성윤", "강민호", "디아즈", "김영웅", "이재현", "류지혁", "김지찬", "박병호"
+    )
+    return memberNames.mapIndexed { index, memberName ->
+        LineupPlaybackItem(
+            id = "lineup-playback-dummy-${index + 1}",
+            battingOrder = index + 1,
+            memberName = memberName,
+            cheerSongTitle = "기본 응원가",
+            lyrics = "삼성의 $memberName 삼성의 $memberName\n" +
+                "안타를 날려버려 삼성 $memberName\n" +
+                "삼성의 $memberName 삼성의 $memberName\n" +
+                "홈런을 날려버려 삼성 $memberName"
+        )
     }
 }
 
@@ -190,24 +272,4 @@ private fun SheetPlaceholderContent(sheet: CheerLotSheet) {
         CheerLotSheet.ServicePage -> "ServicePage"
     }
     Text(text = "Sheet / $title", modifier = Modifier.padding(24.dp))
-}
-
-// 임시뷰
-@Composable
-private fun FullScreenPlaceholder(
-    fullScreen: CheerLotFullScreen,
-    onClose: () -> Unit,
-) {
-    val title = when (fullScreen) {
-        is CheerLotFullScreen.LineupPlayback -> "LineupPlayback(startIndex=${fullScreen.startIndex})"
-        is CheerLotFullScreen.BasePlayback -> "BasePlayback(playerName=${fullScreen.playerName})"
-    }
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column {
-                Text(text = "FullScreen / $title")
-                Button(onClick = onClose) { Text("닫기") }
-            }
-        }
-    }
 }

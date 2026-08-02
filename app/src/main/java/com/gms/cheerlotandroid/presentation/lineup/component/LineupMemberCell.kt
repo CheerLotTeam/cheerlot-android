@@ -43,7 +43,7 @@ import com.gms.cheerlotandroid.presentation.lineup.LineupColors
 import com.gms.cheerlotandroid.presentation.lineup.toLineupColors
 import kotlin.math.abs
 
-private const val FULL_SWIPE_THRESHOLD = 0.6f
+private const val FULL_SWIPE_THRESHOLD = 0.4f
 
 @Composable
 internal fun LineupMemberCell(
