@@ -47,6 +47,8 @@ import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.LineupScreen
+import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersScreen
+import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 
 @Composable
 fun MainScreen(
@@ -253,25 +255,36 @@ private fun MainBottomNavigationBar(
 
 @Composable
 private fun TeamMembersTab(
-    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
+    onOpenBasePlayback: (
+        teamId: TeamId,
+        cheerSongId: String,
+        playerName: String
+    ) -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    val viewModel: TeamMembersTestViewModel =
+    val viewModel: TeamMembersViewModel =
         viewModel(factory = LocalAppContainer.current.viewModelFactory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    TeamMembersTestScreen(
+    TeamMembersScreen(
         state = uiState,
-        onSelectTestTeam = viewModel::selectTeamForTesting,
-        onRowClick = { index ->
-            val row = uiState.rows.getOrNull(index)
+        onRefresh = viewModel::refresh,
+        onTapPlayAll = viewModel::onTapPlayAll,
+        onTapSong = { row ->
+            viewModel.onTapSong(row)
+
             val teamId = uiState.teamId
-            viewModel.onRowClick(index)
-            if (row != null && teamId != null) {
-                onOpenBasePlayback(teamId, row.song.id, row.playerName)
+            val song = row.song
+            if (teamId != null && song != null) {
+                onOpenBasePlayback(
+                    teamId,
+                    song.id,
+                    row.playerName
+                )
             }
         },
-        onProfileClick = onOpenSettings
+        onSnackbarShown = viewModel::onSnackbarShown,
+        onOpenSettings = onOpenSettings
     )
 }
 
@@ -279,8 +292,11 @@ private fun TeamMembersTab(
 private fun SearchTab() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = { CustomTopAppBarLargeTitle(title = "검색") },
-        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+        topBar = {
+            CustomTopAppBarLargeTitle(title = "검색")
+        },
+        contentWindowInsets =
+            WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -288,7 +304,9 @@ private fun SearchTab() {
                 .padding(innerPadding),
             contentAlignment = Alignment.Center
         ) {
-            MainTabPlaceholder(destination = CheerLotMainTab.SEARCH)
+            MainTabPlaceholder(
+                destination = CheerLotMainTab.SEARCH
+            )
         }
     }
 }
