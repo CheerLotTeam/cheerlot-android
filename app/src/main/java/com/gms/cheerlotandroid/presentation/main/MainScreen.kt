@@ -45,6 +45,7 @@ import com.gms.cheerlotandroid.design.component.CustomTopAppBarLargeTitle
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
+import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.LineupScreen
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersScreen
@@ -54,7 +55,8 @@ import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 fun MainScreen(
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
     onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
-    onOpenLineupChange: (playerId: String) -> Unit = {},
+    onOpenCheerSongMenu: (member: PlayerInfo, startIndex: Int) -> Unit = { _, _ -> },
+    onOpenLineupChange: (member: PlayerInfo) -> Unit = {},
     onShowDialog: (CheerLotDialog) -> Unit = {},
     onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -78,6 +80,7 @@ fun MainScreen(
             tabColor = TeamTheme.colors.secondary,
             onOpenBasePlayback = onOpenBasePlayback,
             onOpenLineupPlayback = onOpenLineupPlayback,
+            onOpenCheerSongMenu = onOpenCheerSongMenu,
             onOpenLineupChange = onOpenLineupChange,
             onShowDialog = onShowDialog,
             onOpenSettings = onOpenSettings,
@@ -91,7 +94,8 @@ private fun MainContent(
     tabColor: Color,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
     onOpenLineupPlayback: (startIndex: Int) -> Unit,
-    onOpenLineupChange: (playerId: String) -> Unit,
+    onOpenCheerSongMenu: (member: PlayerInfo, startIndex: Int) -> Unit,
+    onOpenLineupChange: (member: PlayerInfo) -> Unit,
     onShowDialog: (CheerLotDialog) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
@@ -152,7 +156,9 @@ private fun MainContent(
             composable(CheerLotMainTab.LINEUP.route) {
                 LineupScreen(
                     onOpenSettings = onOpenSettings,
-                    onChangePlayer = { player -> onOpenLineupChange(player.id.value) },
+                    onOpenCheerSongMenu = onOpenCheerSongMenu,
+                    onOpenLineupPlayback = onOpenLineupPlayback,
+                    onOpenLineupChange = onOpenLineupChange,
                     onShowDialog = onShowDialog,
                 )
             }

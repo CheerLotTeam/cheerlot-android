@@ -49,11 +49,25 @@ fun CheerLotNavHost(
                 },
                 onOpenLineupPlayback = { startIndex ->
                     presentationState.showFullScreen(
-                        CheerLotFullScreen.LineupPlayback(startIndex = startIndex)
+                        CheerLotFullScreen.LineupPlayback(
+                            startIndex = startIndex
+                        )
                     )
                 },
-                onOpenLineupChange = { playerId ->
-                    presentationState.showSheet(CheerLotSheet.LineupChange(playerId = playerId))
+                onOpenCheerSongMenu = { member, startIndex ->
+                    presentationState.showSheet(
+                        CheerLotSheet.CheerSongList(
+                            member = member,
+                            startIndex = startIndex
+                        )
+                    )
+                },
+                onOpenLineupChange = { member ->
+                    presentationState.showSheet(
+                        CheerLotSheet.LineupChange(
+                            member = member
+                        )
+                    )
                 },
                 onShowDialog = presentationState::showDialog,
                 onOpenSettings = {

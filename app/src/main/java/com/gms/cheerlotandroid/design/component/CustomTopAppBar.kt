@@ -148,6 +148,7 @@ fun CustomTopAppBarEditMode(
     onClose: () -> Unit,
     onCheck: () -> Unit,
     modifier: Modifier = Modifier,
+    checkColor: Color = GrayScaleColor.Gray800,
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     CustomTopAppBar(
@@ -156,7 +157,7 @@ fun CustomTopAppBarEditMode(
         windowInsets = windowInsets,
         navigationIcon = { CloseIconButton(onClose) },
         title = { InlineTitleText(title) },
-        actions = { CheckIconButton(onCheck) }
+        actions = { CheckIconButton(onClick = onCheck, color = checkColor) }
     )
 }
 
@@ -248,12 +249,12 @@ private fun CloseIconButton(onClick: () -> Unit) {
 }
 
 @Composable
-private fun CheckIconButton(onClick: () -> Unit) {
+private fun CheckIconButton(onClick: () -> Unit, color: Color) {
     IconButton(onClick = onClick) {
         Icon(
             imageVector = Icons.Filled.Check,
             contentDescription = "완료",
-            tint = GrayScaleColor.Gray800
+            tint = color
         )
     }
 }

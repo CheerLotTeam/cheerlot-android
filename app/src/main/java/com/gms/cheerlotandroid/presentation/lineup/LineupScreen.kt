@@ -45,7 +45,9 @@ private val cardBottomPadding = 10.dp
 @Composable
 fun LineupScreen(
     onOpenSettings: () -> Unit,
-    onChangePlayer: (PlayerInfo) -> Unit,
+    onOpenCheerSongMenu: (PlayerInfo, Int) -> Unit,
+    onOpenLineupPlayback: (Int) -> Unit,
+    onOpenLineupChange: (PlayerInfo) -> Unit,
     onShowDialog: (CheerLotDialog) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,11 +68,20 @@ fun LineupScreen(
     LineupContent(
         state = uiState,
         onPlayerClick = { player ->
-            // ShowSongList/GoToPlayback은 실제 네비게이션에 연결합니다.
-            viewModel.onPlayerTap(player)
+            when (val action = viewModel.onPlayerTap(player)) {
+                is LineupTapAction.ShowSongList -> {
+                    onOpenCheerSongMenu(action.member, action.startIndex)
+                }
+
+                is LineupTapAction.GoToPlayback -> {
+                    onOpenLineupPlayback(action.startIndex)
+                }
+
+                LineupTapAction.ShowNoSongToast -> Unit
+            }
         },
         onToggleShowLineup = viewModel::toggleShowLineup,
-        onChangePlayer = onChangePlayer,
+        onChangePlayer = onOpenLineupChange,
         onRefresh = viewModel::refresh,
         onDismissToast = viewModel::dismissToast,
         onProfileClick = onOpenSettings,
