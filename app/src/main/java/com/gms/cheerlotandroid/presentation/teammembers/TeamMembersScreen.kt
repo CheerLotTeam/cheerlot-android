@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.data.source.TeamCatalog
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
-import com.gms.cheerlotandroid.design.team.TeamAsset
+import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.presentation.teammembers.component.PlayButton
 import com.gms.cheerlotandroid.presentation.teammembers.component.TeamCard
@@ -89,46 +89,55 @@ private fun TeamMembersContent(
     val teamId = state.teamId
     val team = teamId?.let(TeamCatalog::findById)
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
-    ) {
-        if (teamId == null || team == null) {
+    if (teamId == null || team == null) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
             item {
                 Text(text = "설정에서 응원 팀을 선택해주세요.", style = CheerLotTextStyle.M4, color = GrayScaleColor.Gray400)
             }
-            return@LazyColumn
         }
+        return
+    }
 
-        val asset = TeamAsset.from(teamId)
+    TeamTheme(teamId = teamId) {
+        val primaryColor = TeamTheme.colors.primary
 
-        item { TeamCard(team = team, asset = asset) }
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = "총 ${state.totalSongCount}곡", style = CheerLotTextStyle.M4, color = GrayScaleColor.Gray400)
-                PlayButton(primaryColor = asset.primaryColor, onClick = onTapPlayAll)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            item { TeamCard(team = team) }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = "총 ${state.totalSongCount}곡", style = CheerLotTextStyle.M4, color = GrayScaleColor.Gray400)
+                    PlayButton(primaryColor = primaryColor, onClick = onTapPlayAll)
+                }
             }
-        }
 
-        // 헤더(TeamCard+전체재생)는 팀이 정해지면 항상 보여주고, 목록 부분만 로딩/에러/실제 목록으로 나뉩니다.
-        when {
-            state.isLoading -> item {
-                Text(text = "선수 목록을 불러오는 중이에요", style = CheerLotTextStyle.M4, color = GrayScaleColor.Gray400)
-            }
+            // 헤더(TeamCard+전체재생)는 팀이 정해지면 항상 보여주고, 목록 부분만 로딩/에러/실제 목록으로 나뉩니다.
+            when {
+                state.isLoading -> item {
+                    Text(text = "선수 목록을 불러오는 중이에요", style = CheerLotTextStyle.M4, color = GrayScaleColor.Gray400)
+                }
 
-            state.errorMessage != null -> item {
-                Text(text = state.errorMessage, style = CheerLotTextStyle.M4, color = GrayScaleColor.Gray400)
-            }
+                state.errorMessage != null -> item {
+                    Text(text = state.errorMessage, style = CheerLotTextStyle.M4, color = GrayScaleColor.Gray400)
+                }
 
-            else -> items(state.rows, key = { it.id }) { row ->
-                TeamMembersCell(row = row, primaryColor = asset.primaryColor, onClick = { onTapSong(row) })
+                else -> items(state.rows, key = { it.id }) { row ->
+                    TeamMembersCell(row = row, primaryColor = primaryColor, onClick = { onTapSong(row) })
+                }
             }
         }
     }

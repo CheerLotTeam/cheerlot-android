@@ -18,28 +18,30 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
-import com.gms.cheerlotandroid.design.team.TeamAsset
+import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.team.TeamInfo
 
+// 호출부가 TeamTheme(teamId) { ... }로 감싸져 있다는 전제로 TeamTheme.colors를 바로 읽습니다.
 @Composable
-internal fun TeamCard(team: TeamInfo, asset: TeamAsset, modifier: Modifier = Modifier) {
+internal fun TeamCard(team: TeamInfo, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(12.dp)
+    val colors = TeamTheme.colors
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(asset.primaryColor)
+            .background(colors.primary)
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        asset.primaryPalette.color200.copy(alpha = 0.2f),
-                        asset.primaryPalette.color600.copy(alpha = 0.2f)
+                        colors.primaryPalette.color200.copy(alpha = 0.2f),
+                        colors.primaryPalette.color600.copy(alpha = 0.2f)
                     )
                 )
             )
-            .border(2.dp, asset.primaryPalette.color200, shape)
+            .border(2.dp, colors.primaryPalette.color200, shape)
             .padding(horizontal = 24.dp, vertical = 27.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -47,10 +49,10 @@ internal fun TeamCard(team: TeamInfo, asset: TeamAsset, modifier: Modifier = Mod
         Text(
             text = team.englishFullName.uppercase(),
             style = CheerLotTextStyle.T2.merge(
-                TextStyle(shadow = Shadow(asset.primaryPalette.color600, blurRadius = 8f, offset = Offset(0f, 1f)))
+                TextStyle(shadow = Shadow(colors.primaryPalette.color600, blurRadius = 8f, offset = Offset(0f, 1f)))
             ),
             color = GrayScaleColor.GrayWhite
         )
-        Text(text = team.slogan.uppercase(), style = CheerLotTextStyle.M5, color = asset.primaryPalette.color200)
+        Text(text = team.slogan.uppercase(), style = CheerLotTextStyle.M5, color = colors.primaryPalette.color200)
     }
 }
