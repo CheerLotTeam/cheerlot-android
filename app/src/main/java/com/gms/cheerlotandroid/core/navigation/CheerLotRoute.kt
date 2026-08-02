@@ -34,20 +34,6 @@ sealed interface CheerLotRoute {
     data object Copyright : CheerLotRoute {
         override val route: String = "copyright"
     }
-
-    companion object {
-        // rememberSaveable Saver가 저장해둔 route 문자열로부터 복원할 때 사용합니다.
-        // 인자 있는 route가 추가되면 여기에도 매칭 분기를 추가해야 합니다.
-        fun fromRoute(route: String): CheerLotRoute? = when (route) {
-            Settings.route -> Settings
-            ServiceInfo.route -> ServiceInfo
-            MakerInfo.route -> MakerInfo
-            TermsOfService.route -> TermsOfService
-            PrivacyPolicy.route -> PrivacyPolicy
-            Copyright.route -> Copyright
-            else -> null
-        }
-    }
 }
 
 enum class CheerLotMainTab(

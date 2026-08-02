@@ -3,6 +3,7 @@ package com.gms.cheerlotandroid.core.di
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.gms.cheerlotandroid.presentation.appflow.AppFlowViewModel
+import com.gms.cheerlotandroid.presentation.lineup.LineupViewModel
 import com.gms.cheerlotandroid.presentation.main.MainViewModel
 import com.gms.cheerlotandroid.presentation.main.MiniPlayerViewModel
 import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
@@ -41,6 +42,16 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(PlaybackViewModel::class.java) -> {
                 PlaybackViewModel(
                     audioPlayer = appContainer.audioPlayer,
+                ) as T
+            }
+
+            modelClass.isAssignableFrom(LineupViewModel::class.java) -> {
+                LineupViewModel(
+                    getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getLineupUseCase = appContainer.getLineupUseCase,
+                    getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
+                    getTeamGameScheduleUseCase = appContainer.getTeamGameScheduleUseCase,
+                    getTeamUseCase = appContainer.getTeamUseCase,
                 ) as T
             }
 

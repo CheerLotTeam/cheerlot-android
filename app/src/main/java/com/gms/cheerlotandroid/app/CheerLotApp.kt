@@ -7,18 +7,18 @@ import com.gms.cheerlotandroid.app.host.AppFlowRoot
 import com.gms.cheerlotandroid.app.host.CheerLotNavHost
 import com.gms.cheerlotandroid.core.di.AppContainer
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
-import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
-import com.gms.cheerlotandroid.core.navigation.rememberCheerLotNavigator
+import com.gms.cheerlotandroid.core.navigation.CheerLotPresentationState
+import com.gms.cheerlotandroid.core.navigation.rememberCheerLotPresentationState
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 
 @Composable
 fun CheerLotApp(
     appContainer: AppContainer,
-    navigator: CheerLotNavigator = rememberCheerLotNavigator(),
+    presentationState: CheerLotPresentationState = rememberCheerLotPresentationState(),
 ) {
     // 하위 Composable은 LocalAppContainer.current로 앱 전역 의존성에 접근합니다.
     CompositionLocalProvider(LocalAppContainer provides appContainer) {
-        AppFlowRoot(navigator = navigator)
+        AppFlowRoot(presentationState = presentationState)
     }
 }
 
@@ -29,6 +29,6 @@ fun CheerLotApp(
 @Composable
 private fun CheerLotNavHostPreview() {
     CheerLotTheme {
-        CheerLotNavHost(navigator = rememberCheerLotNavigator())
+        CheerLotNavHost(presentationState = rememberCheerLotPresentationState())
     }
 }

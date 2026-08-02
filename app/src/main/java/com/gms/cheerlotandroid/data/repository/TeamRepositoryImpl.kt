@@ -31,6 +31,10 @@ class TeamRepositoryImpl(
         return teamCatalog.teams
     }
 
+    override fun getTeam(teamId: TeamId): TeamInfo? {
+        return teamCatalog.findById(teamId)
+    }
+
     override suspend fun getLocalVersions(teamId: TeamId): TeamVersionInfo? {
         return teamDao.getTeam(teamId.value)?.toVersionInfo()
     }

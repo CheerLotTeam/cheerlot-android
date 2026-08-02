@@ -6,7 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
-import com.gms.cheerlotandroid.core.navigation.CheerLotNavigator
+import com.gms.cheerlotandroid.core.navigation.CheerLotPresentationState
 import com.gms.cheerlotandroid.presentation.appflow.AppFlowState
 import com.gms.cheerlotandroid.presentation.appflow.AppFlowViewModel
 import com.gms.cheerlotandroid.presentation.onboarding.TeamSelectMode
@@ -18,7 +18,7 @@ import com.gms.cheerlotandroid.presentation.appflow.SplashScreen
 @Composable
 fun AppFlowRoot(
     modifier: Modifier = Modifier,
-    navigator: CheerLotNavigator
+    presentationState: CheerLotPresentationState,
 ) {
     val viewModel: AppFlowViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -36,9 +36,9 @@ fun AppFlowRoot(
         )
 
         AppFlowState.Main -> {
-            CheerLotNavHost(navigator = navigator, modifier = modifier)
-            CheerLotDialogHost(navigator = navigator)
-            CheerLotModalHost(navigator = navigator)
+            CheerLotNavHost(presentationState = presentationState, modifier = modifier)
+            CheerLotDialogHost(presentationState = presentationState)
+            CheerLotModalHost(presentationState = presentationState)
         }
     }
 }

@@ -1,23 +1,10 @@
 package com.gms.cheerlotandroid.design.color.team
 
 import androidx.compose.ui.graphics.Color
-import com.gms.cheerlotandroid.design.color.semantic.CheerLotColor
+import com.gms.cheerlotandroid.domain.model.team.TeamId
 
-/**
- * 팀 컬러 resolver입니다.
- *
- * `assetPrefix`는 팀 에셋 prefix 규칙을 따릅니다. 예: `ss`, `hh`, `lt`
- */
-data class TeamColorSet(
-    val primary: Color,
-    val secondary: Color
-)
-
-/**
- * 팀 primary 팔레트입니다.
- *
- * `color400`은 팀 대표 primary 색상으로 별도 노출하기 때문에 팔레트에서는 제외합니다.
- */
+// TeamColor: 팀 ID를 색상으로 해석하는 resolver
+/** 팀 primary 팔레트입니다. `color400`은 대표색으로 `TeamColors.primary`에 둡니다. */
 data class TeamPrimaryPalette(
     val color100: Color,
     val color200: Color,
@@ -39,6 +26,7 @@ data class TeamSecondaryPalette(
     val color600: Color
 )
 
+/** `TeamId`에 대응하는 대표 색상과 primary/secondary 팔레트를 반환합니다. */
 object TeamColor {
     // 팀별 대표 primary/secondary 색상
     val HanwhaPrimary = TeamPaletteColor.HhOrange400
@@ -71,24 +59,32 @@ object TeamColor {
     val KiaPrimary = TeamPaletteColor.KiaScarlet400
     val KiaSecondary = TeamPaletteColor.KiaScarlet400
 
-    fun colorsFor(assetPrefix: String): TeamColorSet {
-        return when (assetPrefix.lowercase()) {
-            "hh" -> TeamColorSet(HanwhaPrimary, HanwhaSecondary)
-            "lg" -> TeamColorSet(LgPrimary, LgSecondary)
-            "lt" -> TeamColorSet(LottePrimary, LotteSecondary)
-            "ss" -> TeamColorSet(SamsungPrimary, SamsungSecondary)
-            "nc" -> TeamColorSet(NcPrimary, NcSecondary)
-            "kt" -> TeamColorSet(KtPrimary, KtSecondary)
-            "ssg" -> TeamColorSet(SsgPrimary, SsgSecondary)
-            "ds" -> TeamColorSet(DoosanPrimary, DoosanSecondary)
-            "kw" -> TeamColorSet(KiwoomPrimary, KiwoomSecondary)
-            "kia" -> TeamColorSet(KiaPrimary, KiaSecondary)
-            else -> TeamColorSet(CheerLotColor.AppPrimary, CheerLotColor.AppSecondary)
+    fun colorsFor(teamId: TeamId): TeamColors {
+        val assetPrefix = assetPrefixFor(teamId)
+        val (primary, secondary) = when (assetPrefix) {
+            "hh" -> HanwhaPrimary to HanwhaSecondary
+            "lg" -> LgPrimary to LgSecondary
+            "lt" -> LottePrimary to LotteSecondary
+            "ss" -> SamsungPrimary to SamsungSecondary
+            "nc" -> NcPrimary to NcSecondary
+            "kt" -> KtPrimary to KtSecondary
+            "ssg" -> SsgPrimary to SsgSecondary
+            "ds" -> DoosanPrimary to DoosanSecondary
+            "kw" -> KiwoomPrimary to KiwoomSecondary
+            "kia" -> KiaPrimary to KiaSecondary
+            else -> error("Unknown team asset prefix: $assetPrefix")
         }
+
+        return TeamColors(
+            primary = primary,
+            secondary = secondary,
+            primaryPalette = primaryPaletteFor(assetPrefix),
+            secondaryPalette = secondaryPaletteFor(assetPrefix)
+        )
     }
 
     // 팀별 primary 팔레트
-    fun primaryPaletteFor(assetPrefix: String): TeamPrimaryPalette {
+    private fun primaryPaletteFor(assetPrefix: String): TeamPrimaryPalette {
         return when (assetPrefix.lowercase()) {
             "hh" -> TeamPrimaryPalette(
                 color100 = TeamPaletteColor.HhOrange100,
@@ -160,18 +156,12 @@ object TeamColor {
                 color500 = TeamPaletteColor.KiaScarlet500,
                 color600 = TeamPaletteColor.KiaScarlet600
             )
-            else -> TeamPrimaryPalette(
-                color100 = Color.Transparent,
-                color200 = Color.Transparent,
-                color300 = Color.Transparent,
-                color500 = Color.Transparent,
-                color600 = Color.Transparent
-            )
+            else -> error("Unknown team asset prefix: $assetPrefix")
         }
     }
 
     // 팀별 secondary 팔레트
-    fun secondaryPaletteFor(assetPrefix: String): TeamSecondaryPalette {
+    private fun secondaryPaletteFor(assetPrefix: String): TeamSecondaryPalette {
         return when (assetPrefix.lowercase()) {
             "hh" -> TeamSecondaryPalette(
                 color100 = TeamPaletteColor.HhOrange100,
@@ -243,13 +233,23 @@ object TeamColor {
                 color500 = TeamPaletteColor.KiaScarlet500,
                 color600 = TeamPaletteColor.KiaScarlet600
             )
-            else -> TeamSecondaryPalette(
-                color100 = Color.Transparent,
-                color200 = Color.Transparent,
-                color300 = Color.Transparent,
-                color500 = Color.Transparent,
-                color600 = Color.Transparent
-            )
+            else -> error("Unknown team asset prefix: $assetPrefix")
+        }
+    }
+
+    private fun assetPrefixFor(teamId: TeamId): String {
+        return when (teamId.value.trim().uppercase()) {
+            "HANWHA" -> "hh"
+            "LG" -> "lg"
+            "LOTTE" -> "lt"
+            "SAMSUNG" -> "ss"
+            "NC" -> "nc"
+            "KT" -> "kt"
+            "SSG" -> "ssg"
+            "DOOSAN" -> "ds"
+            "KIWOOM" -> "kw"
+            "KIA" -> "kia"
+            else -> error("Unknown TeamId: ${teamId.value}")
         }
     }
 }
