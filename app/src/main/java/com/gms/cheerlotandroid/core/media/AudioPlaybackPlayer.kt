@@ -1,12 +1,16 @@
 package com.gms.cheerlotandroid.core.media
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.gms.cheerlotandroid.design.color.team.TeamColor
 import com.gms.cheerlotandroid.domain.model.cheersong.CheerSongInfo
 import com.gms.cheerlotandroid.domain.model.playback.PlaybackMode
 import com.gms.cheerlotandroid.domain.model.playback.PlaybackState
@@ -34,7 +38,10 @@ class AudioPlaybackPlayer(context: Context) : AudioPlayer {
 
     private val appContext = context.applicationContext
 
-    private val exoPlayer: ExoPlayer = ExoPlayer.Builder(appContext).build().apply {
+    // MediaSessionService(CheerLotPlaybackService)가 같은 인스턴스에 MediaSession을 붙여서
+    // 백그라운드 재생/알림/잠금화면 컨트롤을 제공합니다. AudioPlayer(domain) 인터페이스에는
+    // 플랫폼 타입을 노출하지 않기 위해, 이 구체 클래스에서만 internal로 열어둡니다.
+    internal val exoPlayer: ExoPlayer = ExoPlayer.Builder(appContext).build().apply {
         setAudioAttributes(
             AudioAttributes.Builder()
                 .setUsage(C.USAGE_MEDIA)
@@ -93,6 +100,14 @@ class AudioPlaybackPlayer(context: Context) : AudioPlayer {
         mode: PlaybackMode
     ) {
         if (songs.isEmpty() || songs.size != playerNames.size || startAt !in songs.indices) return
+
+        // 라인업 재생은 Shorts 방식(화면을 나가면 정지)이라 백그라운드로 이어지면 안 됩니다.
+        // 이전에 NORMAL/SEARCH 재생으로 떠 있던 서비스가 있다면 여기서 확실히 내립니다.
+        if (mode == PlaybackMode.LINEUP) {
+            stopPlaybackService()
+        } else {
+            startPlaybackService()
+        }
 
         queue = songs
         queuePlayerNames = playerNames
@@ -215,6 +230,8 @@ class AudioPlaybackPlayer(context: Context) : AudioPlayer {
         _state.update {
             PlaybackState()
         }
+
+        stopPlaybackService()
     }
 
     override fun seek(positionMs: Long) {
@@ -224,15 +241,10 @@ class AudioPlaybackPlayer(context: Context) : AudioPlayer {
         updatePositionState()
     }
 
-    override fun resetToBeginning() {
-        exoPlayer.seekTo(0)
-        updatePositionState()
-    }
-
     private fun playCurrentSong() {
         val song = queue.getOrNull(currentIndex) ?: return
         val playerName = queuePlayerNames.getOrNull(currentIndex)
-        val mediaItem = mediaItemFor(song) ?: return
+        val mediaItem = mediaItemFor(song, playerName, _state.value.teamId) ?: return
 
         exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
@@ -301,8 +313,23 @@ class AudioPlaybackPlayer(context: Context) : AudioPlayer {
         currentIndex = originalQueue.indexOfFirst { it.id == currentSong.id }.takeIf { it >= 0 } ?: 0
     }
 
+    // CheerLotPlaybackService(MediaSessionService)를 살려서 백그라운드 재생/알림/잠금화면 컨트롤을 켭니다.
+    // 이미 떠 있으면 onStartCommand만 다시 불릴 뿐 재생성되지 않으므로, 매 playQueue()마다 불러도 안전합니다.
+    private fun startPlaybackService() {
+        ContextCompat.startForegroundService(
+            appContext,
+            Intent(appContext, CheerLotPlaybackService::class.java)
+        )
+    }
+
+    private fun stopPlaybackService() {
+        appContext.stopService(Intent(appContext, CheerLotPlaybackService::class.java))
+    }
+
     // 로컬 리소스를 찾지 못하면 null을 반환합니다 (iOS playBundle의 assertionFailure + 조기 반환과 동일한 처리).
-    private fun mediaItemFor(song: CheerSongInfo): MediaItem? {
+    // title/artist를 직접 채워서, MediaSession 알림이 음원 파일 자체에 박힌 메타데이터
+    // (원본 유튜브 영상 제목 등) 대신 우리가 가진 선수명/응원가 제목을 보여주게 합니다.
+    private fun mediaItemFor(song: CheerSongInfo, playerName: String?, teamId: TeamId?): MediaItem? {
         val audioUrl = song.audioUrl
         val uri = if (audioUrl.startsWith("http")) {
             Uri.parse(audioUrl)
@@ -312,7 +339,27 @@ class AudioPlaybackPlayer(context: Context) : AudioPlayer {
             if (resId == 0) return null
             Uri.parse("android.resource://${appContext.packageName}/$resId")
         }
-        return MediaItem.fromUri(uri)
+
+        val metadata = MediaMetadata.Builder()
+            .setTitle(song.title)
+            .setArtist(playerName)
+            .setArtworkUri(teamId?.let { coverArtUriFor(it) })
+            .build()
+
+        return MediaItem.Builder()
+            .setUri(uri)
+            .setMediaMetadata(metadata)
+            .build()
+    }
+
+    // iOS TeamAssetVO.coverImageName("{assetPrefix}_cover")과 동일한 팀별 커버 이미지를 사용합니다.
+    // 알림/잠금화면도 594x594 원본을 그대로 쓰면 시스템 UI가 훨씬 작은 크기로 축소하면서 디더링
+    // 노이즈가 생겨서(MiniPlayer와 동일한 문제), 미리 축소해둔 256x256 썸네일을 씁니다.
+    private fun coverArtUriFor(teamId: TeamId): Uri? {
+        val prefix = TeamColor.assetPrefixFor(teamId)
+        val resId = appContext.resources.getIdentifier("team_cover_thumb_$prefix", "drawable", appContext.packageName)
+        if (resId == 0) return null
+        return Uri.parse("android.resource://${appContext.packageName}/$resId")
     }
 
     private fun startPositionTicker() {

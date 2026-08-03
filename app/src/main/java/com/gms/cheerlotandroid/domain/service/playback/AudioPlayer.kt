@@ -48,7 +48,4 @@ interface AudioPlayer {
     fun stop()
 
     fun seek(positionMs: Long)
-
-    // 재생은 유지한 채 현재 곡만 처음으로 되돌립니다 (재생 화면을 닫을 때 사용).
-    fun resetToBeginning()
 }

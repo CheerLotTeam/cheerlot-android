@@ -237,7 +237,9 @@ object TeamColor {
         }
     }
 
-    private fun assetPrefixFor(teamId: TeamId): String {
+    // 미디어 알림/잠금화면 앨범아트(team_cover_{prefix})처럼, 색상 외 다른 팀별 에셋도 이 prefix로
+    // 찾을 수 있어서 모듈 내 다른 패키지(core.media 등)에서도 쓸 수 있게 internal로 엽니다.
+    internal fun assetPrefixFor(teamId: TeamId): String {
         return when (teamId.value.trim().uppercase()) {
             "HANWHA" -> "hh"
             "LG" -> "lg"
