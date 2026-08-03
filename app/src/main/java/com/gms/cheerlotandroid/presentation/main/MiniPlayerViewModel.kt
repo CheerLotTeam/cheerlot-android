@@ -32,8 +32,7 @@ internal class MiniPlayerViewModel(
 
             MiniPlayerUiState(
                 title = "$playerName · ${song.title}",
-                teamInitial = state.teamId?.value?.take(1)
-                    ?: playerName.take(1),
+                teamId = state.teamId,
                 isPlaying = state.isPlaying
             )
         }
