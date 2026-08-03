@@ -3,21 +3,19 @@ package com.gms.cheerlotandroid.presentation.teammembers
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.data.source.TeamCatalog
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
+import com.gms.cheerlotandroid.design.component.CustomTopAppBarTitleWithProfile
 import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.presentation.teammembers.component.PlayButton
@@ -56,18 +55,11 @@ internal fun TeamMembersScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = GrayScaleColor.GrayWhite,
         topBar = {
-            TopAppBar(
-                title = { Text(text = "전체 선수", style = CheerLotTextStyle.B3, color = GrayScaleColor.Gray900) },
-                actions = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(imageVector = Icons.Outlined.AccountCircle, contentDescription = "설정")
-                    }
-                },
-                // MainScreen의 상위 Scaffold(topBar 없음)가 이미 상태바 인셋을 innerPadding으로 반영하고 있어서,
-                // 여기서 기본 windowInsets를 또 쓰면 상태바 높이가 두 번 반영되어 상단 여백이 과도해집니다.
-                windowInsets = WindowInsets(0, 0, 0, 0)
-            )
+            CustomTopAppBarTitleWithProfile(title = "전체 선수", onProfileClick = onOpenSettings)
         },
+        // MainScreen의 상위 Scaffold가 이미 bottom(제스처 내비게이션 바 등)을 innerPadding으로 반영하고 있어서,
+        // 여기서는 top만 반영합니다(Lineup/Search 탭과 동일한 패턴).
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         PullToRefreshBox(
