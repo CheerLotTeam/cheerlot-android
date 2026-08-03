@@ -82,8 +82,8 @@ internal class LineupPlaybackViewModel(
     }
 
     // iOS의 LineupPlaybackService.stop()과 동일하게, 이 화면을 나가면(닫기/뒤로가기 등 모든 경로)
-    // 재생을 완전히 끊습니다. 라인업 재생은 미니플레이어로 이어지지 않는 Shorts 방식이라, 다른 재생
-    // 화면(PlaybackViewModel.close)처럼 resetToBeginning으로 이어가지 않고 stop으로 큐 자체를 비웁니다.
+    // 재생을 완전히 끊습니다. 라인업 재생은 미니플레이어로 이어지지 않는 Shorts 방식이라,
+    // 화면만 닫는 BasePlayback(PlaybackViewModel.close)과 달리 stop으로 큐 자체를 비웁니다.
     fun stopPlayback() {
         audioPlayer.stop()
     }
