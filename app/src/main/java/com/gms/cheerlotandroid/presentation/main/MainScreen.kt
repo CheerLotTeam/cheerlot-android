@@ -20,6 +20,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -48,6 +49,7 @@ import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.LineupScreen
+import com.gms.cheerlotandroid.presentation.lineup.LineupTapAction
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersScreen
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 
@@ -55,7 +57,7 @@ import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 fun MainScreen(
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit = { _, _, _ -> },
     onOpenLineupPlayback: (startIndex: Int) -> Unit = {},
-    onOpenCheerSongMenu: (member: PlayerInfo, startIndex: Int) -> Unit = { _, _ -> },
+    onOpenCheerSongMenu: (action: LineupTapAction.ShowSongList) -> Unit = {},
     onOpenLineupChange: (member: PlayerInfo) -> Unit = {},
     onShowDialog: (CheerLotDialog) -> Unit = {},
     onOpenSettings: () -> Unit = {},
@@ -94,7 +96,7 @@ private fun MainContent(
     tabColor: Color,
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
     onOpenLineupPlayback: (startIndex: Int) -> Unit,
-    onOpenCheerSongMenu: (member: PlayerInfo, startIndex: Int) -> Unit,
+    onOpenCheerSongMenu: (action: LineupTapAction.ShowSongList) -> Unit,
     onOpenLineupChange: (member: PlayerInfo) -> Unit,
     onShowDialog: (CheerLotDialog) -> Unit,
     onOpenSettings: () -> Unit,
@@ -109,6 +111,18 @@ private fun MainContent(
     val miniPlayerViewModel: MiniPlayerViewModel =
         viewModel(factory = LocalAppContainer.current.viewModelFactory)
     val miniPlayerState by miniPlayerViewModel.uiState.collectAsStateWithLifecycle()
+
+    // iOS MainTabView.showMiniPlayer와 동일하게, 라인업/검색 탭에서는 미니플레이어를 숨깁니다.
+    // 라인업은 쇼츠 느낌의 풀스크린 재생이 따로 있고, 검색도 자체 미리듣기 흐름을 가지므로 배경 미니플레이어와 겹치면 안 됩니다.
+    val showMiniPlayer = currentDestination != CheerLotMainTab.LINEUP && currentDestination != CheerLotMainTab.SEARCH
+
+    // iOS는 라인업 탭에 들어오면 audioPlayer.pause()를 호출해 전체선수/검색에서 재생 중이던 배경 재생을 멈춥니다.
+    val audioPlayer = LocalAppContainer.current.audioPlayer
+    LaunchedEffect(currentDestination) {
+        if (currentDestination == CheerLotMainTab.LINEUP) {
+            audioPlayer.pause()
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -129,16 +143,10 @@ private fun MainContent(
                     }
                 },
                 tabColor = tabColor,
-                miniPlayerState = miniPlayerState,
+                miniPlayerState = miniPlayerState.takeIf { showMiniPlayer },
                 onMiniPlayerClick = {
-                    when (val target = miniPlayerViewModel.reopenTarget()) {
-                        is MiniPlayerReopenTarget.Base ->
-                            onOpenBasePlayback(target.teamId, target.cheerSongId, target.playerName)
-
-                        is MiniPlayerReopenTarget.Lineup ->
-                            onOpenLineupPlayback(target.startIndex)
-
-                        null -> Unit
+                    miniPlayerViewModel.reopenTarget()?.let { target ->
+                        onOpenBasePlayback(target.teamId, target.cheerSongId, target.playerName)
                     }
                 },
                 onMiniPlayerPlayClick = miniPlayerViewModel::onPlayClick,
@@ -164,7 +172,6 @@ private fun MainContent(
             }
             composable(CheerLotMainTab.TEAM_MEMBERS.route) {
                 TeamMembersTab(
-                    onOpenBasePlayback = onOpenBasePlayback,
                     onOpenSettings = onOpenSettings,
                 )
             }
@@ -261,11 +268,6 @@ private fun MainBottomNavigationBar(
 
 @Composable
 private fun TeamMembersTab(
-    onOpenBasePlayback: (
-        teamId: TeamId,
-        cheerSongId: String,
-        playerName: String
-    ) -> Unit,
     onOpenSettings: () -> Unit
 ) {
     val viewModel: TeamMembersViewModel =
@@ -276,18 +278,10 @@ private fun TeamMembersTab(
         state = uiState,
         onRefresh = viewModel::refresh,
         onTapPlayAll = viewModel::onTapPlayAll,
+        // iOS TeamMembersViewModel.didTapSong과 동일하게 재생만 시작하고 화면 전환은 하지 않습니다.
+        // 재생 중인 곡은 하단 MiniPlayer로 노출되고, 전체화면 PlaybackView는 MiniPlayer를 탭했을 때만 엽니다.
         onTapSong = { row ->
             viewModel.onTapSong(row)
-
-            val teamId = uiState.teamId
-            val song = row.song
-            if (teamId != null && song != null) {
-                onOpenBasePlayback(
-                    teamId,
-                    song.id,
-                    row.playerName
-                )
-            }
         },
         onSnackbarShown = viewModel::onSnackbarShown,
         onOpenSettings = onOpenSettings
@@ -357,7 +351,7 @@ private fun MainContentPreview() {
                 tabColor = TeamTheme.colors.secondary,
                 miniPlayerState = MiniPlayerUiState(
                     title = "김도영",
-                    teamInitial = "KIA",
+                    teamId = TeamId("KIA"),
                     isPlaying = false
                 ),
                 onMiniPlayerClick = {},

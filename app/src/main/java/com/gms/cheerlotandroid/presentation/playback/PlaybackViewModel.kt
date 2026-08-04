@@ -3,6 +3,7 @@ package com.gms.cheerlotandroid.presentation.playback
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gms.cheerlotandroid.design.color.team.TeamColor
 import com.gms.cheerlotandroid.domain.model.playback.RepeatMode
 import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,7 +42,7 @@ internal class PlaybackViewModel(
                 lyrics = song?.lyrics.orEmpty(),
                 teamInitial = state.teamId?.value?.take(1)
                     ?: playerName.take(1),
-                primaryColor = state.teamId?.let { TeamAsset.from(it).primaryColor } ?: Color.Black,
+                primaryColor = state.teamId?.let { TeamColor.colorsFor(it).primary } ?: Color.Black,
                 isPlaying = state.isPlaying,
                 progressMs = state.currentPositionMs,
                 durationMs = state.durationMs,
@@ -81,9 +82,8 @@ internal class PlaybackViewModel(
         audioPlayer.setRepeatMode(nextMode)
     }
 
-    // 화면을 닫을 때 현재 곡을 처음으로 되돌립니다(재생 자체는 멈추지 않음). iOS PlaybackViewModel과 동일한 동작입니다.
+    // 화면만 닫고 재생 위치/상태는 그대로 둡니다. 미니플레이어가 이어서 보여줍니다.
     fun close(onClosed: () -> Unit) {
-        audioPlayer.resetToBeginning()
         onClosed()
     }
 }

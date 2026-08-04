@@ -45,7 +45,7 @@ private val cardBottomPadding = 10.dp
 @Composable
 fun LineupScreen(
     onOpenSettings: () -> Unit,
-    onOpenCheerSongMenu: (PlayerInfo, Int) -> Unit,
+    onOpenCheerSongMenu: (LineupTapAction.ShowSongList) -> Unit,
     onOpenLineupPlayback: (Int) -> Unit,
     onOpenLineupChange: (PlayerInfo) -> Unit,
     onShowDialog: (CheerLotDialog) -> Unit,
@@ -70,7 +70,7 @@ fun LineupScreen(
         onPlayerClick = { player ->
             when (val action = viewModel.onPlayerTap(player)) {
                 is LineupTapAction.ShowSongList -> {
-                    onOpenCheerSongMenu(action.member, action.startIndex)
+                    onOpenCheerSongMenu(action)
                 }
 
                 is LineupTapAction.GoToPlayback -> {

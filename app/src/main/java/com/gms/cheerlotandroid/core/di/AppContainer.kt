@@ -14,7 +14,6 @@ import com.gms.cheerlotandroid.core.media.AudioPlaybackPlayer
 import com.gms.cheerlotandroid.domain.repository.PlayerRepository
 import com.gms.cheerlotandroid.domain.repository.TeamRepository
 import com.gms.cheerlotandroid.domain.repository.TeamSelectionRepository
-import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayLineupSongsUseCase
@@ -48,7 +47,10 @@ class AppContainer(
     private val networkModule: NetworkModule by lazy { NetworkModule() }
 
     // 앱 전역에서 하나의 ExoPlayer 인스턴스를 공유합니다.
-    val audioPlayer: AudioPlayer by lazy {
+    // 구체 타입(AudioPlaybackPlayer)으로 노출해, CheerLotPlaybackService가 exoPlayer 프로퍼티에
+    // 접근해 같은 인스턴스에 MediaSession을 붙일 수 있게 합니다. 나머지 호출부는 그대로
+    // AudioPlayer(domain) 인터페이스로만 사용합니다.
+    val audioPlayer: AudioPlaybackPlayer by lazy {
         AudioPlaybackPlayer(context = appContext)
     }
 

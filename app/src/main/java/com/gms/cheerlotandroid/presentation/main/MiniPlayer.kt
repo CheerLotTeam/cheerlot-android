@@ -1,11 +1,13 @@
 package com.gms.cheerlotandroid.presentation.main
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,18 +24,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.gms.cheerlotandroid.design.color.brand.BrandColor
+import com.gms.cheerlotandroid.R
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
+import com.gms.cheerlotandroid.design.color.team.TeamColor
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
+import com.gms.cheerlotandroid.domain.model.team.TeamId
 
 internal data class MiniPlayerUiState(
     val title: String,
-    val teamInitial: String,
+    val teamId: TeamId?,
     val isPlaying: Boolean
 )
 
@@ -55,7 +62,7 @@ internal fun MiniPlayer(
         verticalAlignment = Alignment.CenterVertically
     ) {
         MiniPlayerCover(
-            teamInitial = state.teamInitial,
+            teamId = state.teamId,
             modifier = Modifier.size(40.dp)
         )
         Spacer(modifier = Modifier.width(14.dp))
@@ -91,30 +98,50 @@ internal fun MiniPlayer(
     }
 }
 
+// iOS MainTabView가 미니플레이어에 asset.coverImage(팀별 커버, 알림/잠금화면과 동일한 이미지)를
+// 쓰는 것과 동일하게, team_cover_{prefix} 리소스를 그대로 재사용합니다.
 @Composable
 private fun MiniPlayerCover(
-    teamInitial: String,
+    teamId: TeamId?,
     modifier: Modifier = Modifier
 ) {
+    val coverResId = teamId?.let(::teamCoverDrawableFor)
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        BrandColor.Seam100,
-                        GrayScaleColor.GrayWhite,
-                        BrandColor.Seam100
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
+            .background(GrayScaleColor.Gray100)
     ) {
-        Text(
-            text = teamInitial,
-            style = CheerLotTextStyle.B4,
-            color = BrandColor.Seam500
-        )
+        if (coverResId != null) {
+            // painterResource()가 반환하는 Painter 오버로드는 filterQuality를 지원하지 않아서,
+            // ImageBitmap 오버로드를 씁니다. 594x594 원본을 40dp로 크게 축소하는데 기본 필터링으론
+            // 그라데이션에 노이즈가 보여서 High로 고정합니다.
+            Image(
+                bitmap = ImageBitmap.imageResource(coverResId),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                filterQuality = FilterQuality.High
+            )
+        }
+    }
+}
+
+// 원본 커버(594x594)를 40dp로 직접 축소하면 그라데이션에 디더링 노이즈가 생겨서,
+// 미니플레이어 전용으로 미리 축소해둔 썸네일(256x256)을 씁니다.
+private fun teamCoverDrawableFor(teamId: TeamId): Int? {
+    return when (TeamColor.assetPrefixFor(teamId)) {
+        "hh" -> R.drawable.team_cover_thumb_hh
+        "lg" -> R.drawable.team_cover_thumb_lg
+        "lt" -> R.drawable.team_cover_thumb_lt
+        "ss" -> R.drawable.team_cover_thumb_ss
+        "nc" -> R.drawable.team_cover_thumb_nc
+        "kt" -> R.drawable.team_cover_thumb_kt
+        "ssg" -> R.drawable.team_cover_thumb_ssg
+        "ds" -> R.drawable.team_cover_thumb_ds
+        "kw" -> R.drawable.team_cover_thumb_kw
+        "kia" -> R.drawable.team_cover_thumb_kia
+        else -> null
     }
 }
 
@@ -125,7 +152,7 @@ private fun MiniPlayerPreview() {
         MiniPlayer(
             state = MiniPlayerUiState(
                 title = "김도영",
-                teamInitial = "KIA",
+                teamId = TeamId("KIA"),
                 isPlaying = false
             )
         )

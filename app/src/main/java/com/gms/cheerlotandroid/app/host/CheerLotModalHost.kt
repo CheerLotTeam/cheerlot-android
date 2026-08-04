@@ -1,23 +1,28 @@
 package com.gms.cheerlotandroid.app.host
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,9 +36,8 @@ import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.cheersongmenu.CheerSongMenuSheet
 import com.gms.cheerlotandroid.presentation.lineupchange.LineupChangeSheet
-import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackItem
 import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackScreen
-import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackUiState
+import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackViewModel
 import com.gms.cheerlotandroid.presentation.playback.PlaybackScreen
 import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
 import kotlinx.coroutines.launch
@@ -47,6 +51,7 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
         is CheerLotSheet.CheerSongList -> {
             val sheetState = rememberModalBottomSheetState()
             val scope = rememberCoroutineScope()
+            val playLineupSongsUseCase = LocalAppContainer.current.playLineupSongsUseCase
 
             ModalBottomSheet(
                 onDismissRequest = presentationState::dismissSheet,
@@ -62,12 +67,19 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
                                 it.id == cheerSong.id
                             }
                             if (songIndex >= 0) {
+                                val targetIndex = sheet.startIndex + songIndex
+                                playLineupSongsUseCase(
+                                    songs = sheet.queueSongs,
+                                    playerNames = sheet.queuePlayerNames,
+                                    startAt = targetIndex,
+                                    teamId = sheet.member.teamId
+                                )
                                 scope.launch {
                                     sheetState.hide()
                                     if (!sheetState.isVisible) {
                                         presentationState.showFullScreen(
                                             CheerLotFullScreen.LineupPlayback(
-                                                startIndex = sheet.startIndex + songIndex
+                                                startIndex = targetIndex
                                             )
                                         )
                                     }
@@ -113,7 +125,7 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
         }
     }
 
-    when (val fullScreen = presentationState.currentFullScreen) {
+    when (presentationState.currentFullScreen) {
         is CheerLotFullScreen.BasePlayback -> {
             val viewModel: PlaybackViewModel =
                 viewModel(factory = LocalAppContainer.current.viewModelFactory)
@@ -159,10 +171,7 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
                 }
             ) {
-                LineupPlaybackDummySheet(
-                    fullScreen = fullScreen,
-                    onClose = dismissWithAnimation
-                )
+                LineupPlaybackContent(onClose = dismissWithAnimation)
             }
         }
 
@@ -170,49 +179,35 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
     }
 }
 
-// 라인업 재생 임시뷰
+// 실제 재생 시작(PlayLineupSongsUseCase)은 이 화면으로 넘어오기 전 LineupViewModel/CheerSongMenuSheet에서
+// 이미 처리했다는 전제로, 여기서는 audioPlayer.state를 관찰만 합니다.
 @Composable
-private fun LineupPlaybackDummySheet(
-    fullScreen: CheerLotFullScreen.LineupPlayback,
-    onClose: () -> Unit
-) {
-    val teamId = remember { TeamId("SAMSUNG") }
-    var isPlaying by remember { mutableStateOf(false) }
-    val items = remember { lineupPlaybackDummyItems() }
+private fun LineupPlaybackContent(onClose: () -> Unit) {
+    val viewModel: LineupPlaybackViewModel =
+        viewModel(factory = LocalAppContainer.current.viewModelFactory)
+    val uiState by viewModel.uiState.collectAsState()
+    val teamId = uiState.teamId
+
+    // 닫기 버튼, 시스템 back, 시트 dismiss 등 어떤 경로로 화면을 떠나든 재생을 완전히 끊습니다
+    // (iOS LineupPlaybackView의 onClose/onDisappear에서 둘 다 stop()을 호출하는 것과 동일한 목적).
+    DisposableEffect(Unit) {
+        onDispose { viewModel.stopPlayback() }
+    }
+
+    if (teamId == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     TeamTheme(teamId = teamId) {
         LineupPlaybackScreen(
-            state = LineupPlaybackUiState(
-                gameDate = "8월 1일",
-                teamsText = "삼성 vs LG",
-                items = items,
-                startIndex = fullScreen.startIndex,
-                isPlaying = isPlaying,
-                isLoading = false
-            ),
+            state = uiState,
             teamId = teamId,
             onClose = onClose,
-            onTogglePlayback = { isPlaying = !isPlaying },
-            onPageChanged = {}
-        )
-    }
-}
-
-// 라인업 재생 임시 데이터
-private fun lineupPlaybackDummyItems(): List<LineupPlaybackItem> {
-    val memberNames = listOf(
-        "구자욱", "김성윤", "강민호", "디아즈", "김영웅", "이재현", "류지혁", "김지찬", "박병호"
-    )
-    return memberNames.mapIndexed { index, memberName ->
-        LineupPlaybackItem(
-            id = "lineup-playback-dummy-${index + 1}",
-            battingOrder = index + 1,
-            memberName = memberName,
-            cheerSongTitle = "기본 응원가",
-            lyrics = "삼성의 $memberName 삼성의 $memberName\n" +
-                "안타를 날려버려 삼성 $memberName\n" +
-                "삼성의 $memberName 삼성의 $memberName\n" +
-                "홈런을 날려버려 삼성 $memberName"
+            onTogglePlayback = viewModel::onTogglePlayback,
+            onPageChanged = viewModel::onPageChanged
         )
     }
 }

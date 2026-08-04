@@ -11,14 +11,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 // MiniPlayer를 탭했을 때 어느 풀스크린 재생 화면으로 돌아가야 하는지를 나타냅니다.
-internal sealed interface MiniPlayerReopenTarget {
-    data class Lineup(val startIndex: Int) : MiniPlayerReopenTarget
-    data class Base(
-        val teamId: TeamId,
-        val cheerSongId: String,
-        val playerName: String
-    ) : MiniPlayerReopenTarget
-}
+// 라인업 재생(PlaybackMode.LINEUP)은 미니플레이어로 이어지지 않으므로(아래 uiState 참고) 대상이 없습니다.
+internal data class MiniPlayerReopenTarget(
+    val teamId: TeamId,
+    val cheerSongId: String,
+    val playerName: String
+)
 
 // MainTabScreen 하단에 항상 떠 있는 MiniPlayer의 상태/액션을 audioPlayer.state에서 파생합니다.
 internal class MiniPlayerViewModel(
@@ -27,13 +25,14 @@ internal class MiniPlayerViewModel(
 
     val uiState: StateFlow<MiniPlayerUiState?> = audioPlayer.state
         .map { state ->
+            // 라인업 재생은 iOS와 동일하게 Shorts 방식(피드를 나가면 정지)이라 미니플레이어로 이어지지 않습니다.
+            if (state.playbackMode == PlaybackMode.LINEUP) return@map null
             val song = state.nowPlaying ?: return@map null
             val playerName = state.currentPlayerName.orEmpty()
 
             MiniPlayerUiState(
                 title = "$playerName · ${song.title}",
-                teamInitial = state.teamId?.value?.take(1)
-                    ?: playerName.take(1),
+                teamId = state.teamId,
                 isPlaying = state.isPlaying
             )
         }
@@ -51,20 +50,16 @@ internal class MiniPlayerViewModel(
         audioPlayer.playNext()
     }
 
-    // MiniPlayer를 탭했을 때, 현재 재생 모드에 맞는 풀스크린 재생 화면 목적지를 계산합니다.
+    // MiniPlayer를 탭했을 때 돌아갈 풀스크린 재생 화면 목적지를 계산합니다.
     fun reopenTarget(): MiniPlayerReopenTarget? {
         val state = audioPlayer.state.value
         val song = state.nowPlaying ?: return null
+        val teamId = state.teamId ?: return null
 
-        return if (state.playbackMode == PlaybackMode.LINEUP) {
-            MiniPlayerReopenTarget.Lineup(startIndex = state.currentQueueIndex)
-        } else {
-            val teamId = state.teamId ?: return null
-            MiniPlayerReopenTarget.Base(
-                teamId = teamId,
-                cheerSongId = song.id,
-                playerName = state.currentPlayerName.orEmpty()
-            )
-        }
+        return MiniPlayerReopenTarget(
+            teamId = teamId,
+            cheerSongId = song.id,
+            playerName = state.currentPlayerName.orEmpty()
+        )
     }
 }

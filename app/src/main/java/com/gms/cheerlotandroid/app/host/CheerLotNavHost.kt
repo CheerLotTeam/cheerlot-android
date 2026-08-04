@@ -54,11 +54,13 @@ fun CheerLotNavHost(
                         )
                     )
                 },
-                onOpenCheerSongMenu = { member, startIndex ->
+                onOpenCheerSongMenu = { action ->
                     presentationState.showSheet(
                         CheerLotSheet.CheerSongList(
-                            member = member,
-                            startIndex = startIndex
+                            member = action.member,
+                            startIndex = action.startIndex,
+                            queueSongs = action.queueSongs,
+                            queuePlayerNames = action.queuePlayerNames
                         )
                     )
                 },
