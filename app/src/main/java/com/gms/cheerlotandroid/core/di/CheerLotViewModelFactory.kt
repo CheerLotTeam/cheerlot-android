@@ -50,6 +50,7 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(LineupViewModel::class.java) -> {
                 LineupViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
                     getLineupUseCase = appContainer.getLineupUseCase,
                     getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
                     getTeamGameScheduleUseCase = appContainer.getTeamGameScheduleUseCase,
