@@ -23,12 +23,10 @@ internal class LineupChangeViewModel(
     val uiState: StateFlow<LineupChangeUiState> = _uiState.asStateFlow()
     private var lineupMember: PlayerInfo? = null
     private var benchPlayersJob: Job? = null
-    private var swapJob: Job? = null
 
     fun initialize(lineupMember: PlayerInfo) {
         this.lineupMember = lineupMember
         benchPlayersJob?.cancel()
-        swapJob?.cancel()
         _uiState.value = LineupChangeUiState(lineupMember = lineupMember)
         observeBenchPlayers(lineupMember)
     }
@@ -55,7 +53,7 @@ internal class LineupChangeViewModel(
             return
         }
 
-        swapJob = viewModelScope.launch {
+        viewModelScope.launch {
             _uiState.update { it.copy(isSwapping = true, errorMessage = null) }
             runCatching {
                 swapLineupPlayersUseCase(lineupMember, selectedMember)
@@ -84,8 +82,6 @@ internal class LineupChangeViewModel(
     fun resetTransientState() {
         benchPlayersJob?.cancel()
         benchPlayersJob = null
-        swapJob?.cancel()
-        swapJob = null
         lineupMember = null
         _uiState.value = LineupChangeUiState()
     }

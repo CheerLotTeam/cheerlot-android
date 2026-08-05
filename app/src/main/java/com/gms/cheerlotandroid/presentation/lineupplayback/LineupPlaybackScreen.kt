@@ -47,7 +47,6 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineupplayback.component.LineupPageControl
 import com.gms.cheerlotandroid.presentation.lineupplayback.component.LineupPlayCard
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlin.math.abs
 import kotlin.math.absoluteValue
 
 private const val CARD_WIDTH_FRACTION = 300f / 360f
@@ -197,11 +196,10 @@ private fun LineupPlaybackPager(
 
                 if (itemCount > 1) {
                     // 바깥 복제본에 도착하면 같은 선수를 가리키는 중앙 페이지로 애니메이션 없이 재배치합니다.
-                    val centeredPage = when {
-                        settledPage < itemCount -> settledPage + itemCount
-                        settledPage >= itemCount * 2 -> settledPage - itemCount
-                        else -> null
-                    }
+                    val centeredPage = calculateCenteredPagerPage(
+                        settledPage = settledPage,
+                        itemCount = itemCount
+                    )
                     if (centeredPage != null) {
                         pagerState.scrollToPage(centeredPage)
                     }
@@ -223,15 +221,11 @@ private fun LineupPlaybackPager(
         if (pagerState.currentPage % itemCount == playbackItemIndex) return@LaunchedEffect
 
         // 현재 페이지에서 가장 가까운 복제본을 선택해 불필요하게 여러 카드를 통과하지 않도록 합니다.
-        val targetPage = if (itemCount > 1) {
-            listOf(
-                playbackItemIndex,
-                itemCount + playbackItemIndex,
-                itemCount * 2 + playbackItemIndex
-            ).minBy { candidate -> abs(candidate - pagerState.currentPage) }
-        } else {
-            playbackItemIndex
-        }
+        val targetPage = calculateNearestPagerPage(
+            currentPage = pagerState.currentPage,
+            itemIndex = playbackItemIndex,
+            itemCount = itemCount
+        )
         pendingPlaybackItemIndex = playbackItemIndex
         pagerState.animateScrollToPage(targetPage)
     }
