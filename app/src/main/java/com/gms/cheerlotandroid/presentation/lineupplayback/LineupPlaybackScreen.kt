@@ -170,6 +170,8 @@ private fun LineupPlaybackPager(
 
     val itemCount = state.items.size
     val initialItemIndex = initialStartIndex.coerceIn(state.items.indices)
+
+    // 앞·중앙·뒤에 동일한 목록을 배치하고 중앙 복제본에서 시작해 양방향 무한 스크롤처럼 보이게 합니다.
     val pagerPageCount = if (itemCount > 1) itemCount * 3 else itemCount
     val initialPage = if (itemCount > 1) itemCount + initialItemIndex else initialItemIndex
     val pagerState = rememberPagerState(initialPage = initialPage) { pagerPageCount }
@@ -194,6 +196,7 @@ private fun LineupPlaybackPager(
                 }
 
                 if (itemCount > 1) {
+                    // 바깥 복제본에 도착하면 같은 선수를 가리키는 중앙 페이지로 애니메이션 없이 재배치합니다.
                     val centeredPage = when {
                         settledPage < itemCount -> settledPage + itemCount
                         settledPage >= itemCount * 2 -> settledPage - itemCount
@@ -219,6 +222,7 @@ private fun LineupPlaybackPager(
         val playbackItemIndex = state.currentPlaybackIndex.coerceIn(state.items.indices)
         if (pagerState.currentPage % itemCount == playbackItemIndex) return@LaunchedEffect
 
+        // 현재 페이지에서 가장 가까운 복제본을 선택해 불필요하게 여러 카드를 통과하지 않도록 합니다.
         val targetPage = if (itemCount > 1) {
             listOf(
                 playbackItemIndex,
@@ -256,6 +260,8 @@ private fun LineupPlaybackPager(
                 modifier = Modifier.height(cardHeight)
             ) { page ->
                 val pageOffset = pagerState.pageOffsetFor(page)
+
+                // 복제된 Pager 페이지를 실제 라인업 선수 인덱스로 변환합니다.
                 val itemIndex = page % itemCount
 
                 LineupPlayCard(
