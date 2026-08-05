@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.LineupGameInfo
+import com.gms.cheerlotandroid.domain.model.team.TeamGameInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
@@ -20,12 +21,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
-private val seoulZoneId: ZoneId = ZoneId.of("Asia/Seoul")
 
 // 재생 화면 전용 ViewModel입니다. 실제 재생 시작은 LineupViewModel(선수 탭)이 이미 해뒀다는 전제로,
 // 여기서는 audioPlayer.state를 관찰만 하고 화면에 보여줄 라인업/경기 정보만 별도로 다시 읽어옵니다.
@@ -35,14 +30,14 @@ internal class LineupPlaybackViewModel(
     private val getLineupUseCase: GetLineupUseCase,
     private val getLineupGameInfoUseCase: GetLineupGameInfoUseCase,
     private val getTeamUseCase: GetTeamUseCase,
-    private val audioPlayer: AudioPlayer,
-    private val currentDateProvider: () -> LocalDate = { LocalDate.now(seoulZoneId) }
+    private val audioPlayer: AudioPlayer
 ) : ViewModel() {
 
     private data class ScreenInfo(
         val teamId: TeamId,
-        val gameDate: String,
-        val teamsText: String,
+        val teamShortName: String,
+        val opponentTeamName: String?,
+        val gameInfo: TeamGameInfo?,
         val items: List<LineupPlaybackItem>
     )
 
@@ -67,10 +62,11 @@ internal class LineupPlaybackViewModel(
         } else {
             LineupPlaybackUiState(
                 teamId = screenInfo.teamId,
-                gameDate = screenInfo.gameDate,
-                teamsText = screenInfo.teamsText,
+                teamShortName = screenInfo.teamShortName,
+                opponentTeamName = screenInfo.opponentTeamName,
+                gameInfo = screenInfo.gameInfo,
                 items = screenInfo.items,
-                startIndex = playbackState.currentQueueIndex.coerceIn(screenInfo.items.indices),
+                currentPlaybackIndex = playbackState.currentQueueIndex.coerceIn(screenInfo.items.indices),
                 isPlaying = playbackState.isPlaying,
                 isLoading = false
             )
@@ -100,11 +96,11 @@ internal class LineupPlaybackViewModel(
         gameInfo: LineupGameInfo?
     ): ScreenInfo {
         val team = getTeamUseCase(teamId)
-        val opponentTeamName = gameInfo?.gameInfo?.opponentTeamId?.let { getTeamUseCase(it)?.shortName }
+        // 재생 중인 카드는 로컬에 저장된 최근 확정 라인업이므로 TopBar도 같은 경기 정보를 사용합니다.
+        // 오늘 라인업이 확정된 경우에는 recentGameInfo와 gameInfo가 동일합니다.
+        val displayGameInfo = gameInfo?.recentGameInfo
+        val opponentTeamName = displayGameInfo?.opponentTeamId?.let { getTeamUseCase(it)?.shortName }
         val teamShortName = team?.shortName.orEmpty()
-        val teamsText = opponentTeamName?.let { opponent ->
-            if (gameInfo?.gameInfo?.isHome == true) "$opponent vs $teamShortName" else "$teamShortName vs $opponent"
-        } ?: teamShortName
 
         val items = players.flatMap { player ->
             player.cheerSongs.map { song ->
@@ -120,13 +116,10 @@ internal class LineupPlaybackViewModel(
 
         return ScreenInfo(
             teamId = teamId,
-            gameDate = currentDateProvider().format(koreanDateFormatter),
-            teamsText = teamsText,
+            teamShortName = teamShortName,
+            opponentTeamName = opponentTeamName,
+            gameInfo = displayGameInfo,
             items = items
         )
-    }
-
-    private companion object {
-        val koreanDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("M월 d일", Locale.KOREAN)
     }
 }
