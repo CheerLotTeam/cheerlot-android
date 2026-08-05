@@ -14,8 +14,10 @@ import com.gms.cheerlotandroid.core.media.AudioPlaybackPlayer
 import com.gms.cheerlotandroid.domain.repository.PlayerRepository
 import com.gms.cheerlotandroid.domain.repository.TeamRepository
 import com.gms.cheerlotandroid.domain.repository.TeamSelectionRepository
+import com.gms.cheerlotandroid.domain.usecase.lineup.GetBenchPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
+import com.gms.cheerlotandroid.domain.usecase.lineup.SwapLineupPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayLineupSongsUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayTeamMembersUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
@@ -81,6 +83,14 @@ class AppContainer(
 
     val getLineupUseCase: GetLineupUseCase by lazy {
         GetLineupUseCase(playerRepository = playerRepository)
+    }
+
+    val getBenchPlayersUseCase: GetBenchPlayersUseCase by lazy {
+        GetBenchPlayersUseCase(playerRepository = playerRepository)
+    }
+
+    val swapLineupPlayersUseCase: SwapLineupPlayersUseCase by lazy {
+        SwapLineupPlayersUseCase(playerRepository = playerRepository)
     }
 
     val getAllPlayersUseCase: GetAllPlayersUseCase by lazy {

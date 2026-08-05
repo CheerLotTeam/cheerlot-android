@@ -36,6 +36,11 @@ class PlayerRepositoryImpl(
             .map { list -> list.map { it.toDomain() } }
     }
 
+    override fun observeBenchPlayers(teamId: TeamId): Flow<List<PlayerInfo>> {
+        return playerDao.observeBenchWithCheerSongs(teamId.value)
+            .map { list -> list.map { it.toDomain() } }
+    }
+
     override suspend fun syncLineup(teamId: TeamId, forceRefresh: Boolean) {
         val local = teamRepository.getLocalVersions(teamId)
         val remote = teamRepository.fetchRemoteVersions(teamId)
@@ -86,5 +91,28 @@ class PlayerRepositoryImpl(
         // 여기서는 네트워크를 타지 않고 캐시만 읽습니다.
         return playerDao.getPlayerWithCheerSongs(playerId)?.toDomain()
             ?: error("Player not found in local cache: $playerId")
+    }
+
+    override suspend fun swapLineupPlayer(
+        teamId: TeamId,
+        lineupPlayerId: String,
+        benchPlayerId: String,
+        battingOrder: Int
+    ) {
+        database.withTransaction {
+            val removedCount = playerDao.removeFromLineup(
+                teamId = teamId.value,
+                lineupPlayerId = lineupPlayerId,
+                battingOrder = battingOrder
+            )
+            check(removedCount == 1) { "The selected lineup player is no longer available." }
+
+            val addedCount = playerDao.addToLineup(
+                teamId = teamId.value,
+                benchPlayerId = benchPlayerId,
+                battingOrder = battingOrder
+            )
+            check(addedCount == 1) { "The selected bench player is no longer available." }
+        }
     }
 }
