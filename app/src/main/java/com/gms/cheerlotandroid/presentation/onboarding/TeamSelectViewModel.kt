@@ -3,6 +3,7 @@ package com.gms.cheerlotandroid.presentation.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gms.cheerlotandroid.domain.model.team.TeamId
+import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
 import com.gms.cheerlotandroid.domain.usecase.team.GetAllTeamsUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.UpdateSelectedTeamUseCase
@@ -17,6 +18,7 @@ class TeamSelectViewModel(
     getAllTeamsUseCase: GetAllTeamsUseCase,
     private val getSelectedTeamUseCase: GetSelectedTeamUseCase,
     private val updateSelectedTeamUseCase: UpdateSelectedTeamUseCase,
+    private val audioPlayer: AudioPlayer,
     val mode: TeamSelectMode = TeamSelectMode.ONBOARDING
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TeamSelectUiState(teams = getAllTeamsUseCase()))
@@ -40,6 +42,9 @@ class TeamSelectViewModel(
         if (state.isSubmitting) return
 
         _uiState.update { it.copy(isSubmitting = true) }
+        // 팀이 바뀌면 이전 팀 응원가가 백그라운드/미니플레이어에 남아있지 않도록 정지합니다.
+        // iOS TeamSelectViewModel.complete()와 동일하게 onboarding/change 구분 없이 항상 호출합니다.
+        audioPlayer.stop()
         viewModelScope.launch {
             updateSelectedTeamUseCase(teamId)
             onComplete()
