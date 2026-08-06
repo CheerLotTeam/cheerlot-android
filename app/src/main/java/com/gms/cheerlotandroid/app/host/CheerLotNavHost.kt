@@ -1,23 +1,31 @@
 package com.gms.cheerlotandroid.app.host
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotFullScreen
 import com.gms.cheerlotandroid.core.navigation.CheerLotPresentationState
 import com.gms.cheerlotandroid.core.navigation.CheerLotRoute
 import com.gms.cheerlotandroid.core.navigation.CheerLotSheet
 import com.gms.cheerlotandroid.core.navigation.PlaybackSource
-import com.gms.cheerlotandroid.design.component.CustomTopAppBarBackWithTitle
 import com.gms.cheerlotandroid.presentation.main.MainScreen
+import com.gms.cheerlotandroid.presentation.settings.AppLinks
+import com.gms.cheerlotandroid.presentation.settings.LegalContent
+import com.gms.cheerlotandroid.presentation.settings.MakerInfoScreen
+import com.gms.cheerlotandroid.presentation.settings.ServiceAppInfoScreen
+import com.gms.cheerlotandroid.presentation.settings.ServiceInfoScreen
+import com.gms.cheerlotandroid.presentation.settings.SettingsScreen
+import com.gms.cheerlotandroid.presentation.settings.SettingsViewModel
 
 private const val MAIN_ROUTE = "main"
 
@@ -80,45 +88,73 @@ fun CheerLotNavHost(
             )
         }
         composable(CheerLotRoute.Settings.route) {
-            PlaceholderScreen(title = "설정", onNavigateUp = navController::navigateUp)
+            val viewModel: SettingsViewModel =
+                viewModel(factory = LocalAppContainer.current.viewModelFactory)
+            val uiState by viewModel.uiState.collectAsState()
+
+            SettingsScreen(
+                state = uiState,
+                onTapTeamCard = {
+                    uiState.currentTeam?.let { team ->
+                        presentationState.showSheet(CheerLotSheet.TeamChange(selectedTeamId = team.id))
+                    }
+                },
+                onTapServiceInfo = {
+                    navController.navigate(CheerLotRoute.ServiceInfo.route)
+                },
+                onTapMakerInfo = {
+                    navController.navigate(CheerLotRoute.MakerInfo.route)
+                },
+                onTapInquiry = {
+                    presentationState.showSheet(CheerLotSheet.Inquiry)
+                },
+                onBack = navController::navigateUp
+            )
         }
         composable(CheerLotRoute.ServiceInfo.route) {
-            PlaceholderScreen(title = "서비스 정보", onNavigateUp = navController::navigateUp)
+            val context = LocalContext.current
+
+            ServiceInfoScreen(
+                onTapMainPage = { context.openExternalUrl(AppLinks.MAIN_PAGE_URL) },
+                onTapTerms = { navController.navigate(CheerLotRoute.TermsOfService.route) },
+                onTapPrivacy = { navController.navigate(CheerLotRoute.PrivacyPolicy.route) },
+                onTapCopyright = { navController.navigate(CheerLotRoute.Copyright.route) },
+                onBack = navController::navigateUp
+            )
         }
         composable(CheerLotRoute.MakerInfo.route) {
-            PlaceholderScreen(title = "만든 사람", onNavigateUp = navController::navigateUp)
+            val context = LocalContext.current
+
+            MakerInfoScreen(
+                onTapInstagram = { context.openExternalUrl(AppLinks.INSTAGRAM_URL) },
+                onTapStoreReview = { context.openExternalUrl(AppLinks.PLAY_STORE_URL) },
+                onBack = navController::navigateUp
+            )
         }
         composable(CheerLotRoute.TermsOfService.route) {
-            PlaceholderScreen(title = "이용약관", onNavigateUp = navController::navigateUp)
+            ServiceAppInfoScreen(
+                title = "이용약관",
+                body = LegalContent.termsOfService,
+                onBack = navController::navigateUp
+            )
         }
         composable(CheerLotRoute.PrivacyPolicy.route) {
-            PlaceholderScreen(title = "개인정보 처리방침", onNavigateUp = navController::navigateUp)
+            ServiceAppInfoScreen(
+                title = "개인정보처리방침",
+                body = LegalContent.privacyPolicy,
+                onBack = navController::navigateUp
+            )
         }
         composable(CheerLotRoute.Copyright.route) {
-            PlaceholderScreen(title = "저작권", onNavigateUp = navController::navigateUp)
+            ServiceAppInfoScreen(
+                title = "저작권 법적고지",
+                body = LegalContent.copyrightPolicy,
+                onBack = navController::navigateUp
+            )
         }
     }
-
 }
 
-// 임시뷰
-@Composable
-private fun PlaceholderScreen(
-    title: String,
-    onNavigateUp: () -> Unit,
-) {
-    Scaffold(
-        topBar = {
-            CustomTopAppBarBackWithTitle(title = title, onBack = onNavigateUp)
-        },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(text = title)
-        }
-    }
+private fun Context.openExternalUrl(url: String) {
+    startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
 }

@@ -12,7 +12,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -24,7 +23,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotFullScreen
@@ -38,8 +36,11 @@ import com.gms.cheerlotandroid.presentation.lineup.cheersongmenu.CheerSongMenuSh
 import com.gms.cheerlotandroid.presentation.lineupchange.LineupChangeSheet
 import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackScreen
 import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackViewModel
+import com.gms.cheerlotandroid.presentation.onboarding.TeamSelectMode
+import com.gms.cheerlotandroid.presentation.onboarding.TeamSelectScreen
 import com.gms.cheerlotandroid.presentation.playback.PlaybackScreen
 import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
+import com.gms.cheerlotandroid.presentation.settings.component.InquiryWebViewSheet
 import kotlinx.coroutines.launch
 
 // presentationState의 modal 상태를 관찰해 실제 modal UI로 그려주는 root host입니다.
@@ -116,13 +117,46 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
             }
         }
 
-        null -> Unit
+        is CheerLotSheet.TeamChange -> {
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val scope = rememberCoroutineScope()
+            val dismissWithAnimation: () -> Unit = {
+                scope.launch {
+                    sheetState.hide()
+                    if (!sheetState.isVisible) {
+                        presentationState.dismissSheet()
+                    }
+                }
+            }
 
-        else -> {
-            ModalBottomSheet(onDismissRequest = presentationState::dismissSheet) {
-                SheetPlaceholderContent(sheet)
+            ModalBottomSheet(
+                onDismissRequest = presentationState::dismissSheet,
+                sheetState = sheetState,
+                sheetGesturesEnabled = false,
+                dragHandle = null,
+                containerColor = MaterialTheme.colorScheme.background,
+                contentWindowInsets = {
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+                }
+            ) {
+                TeamSelectScreen(
+                    mode = TeamSelectMode.CHANGE,
+                    onComplete = dismissWithAnimation,
+                    onClose = dismissWithAnimation
+                )
             }
         }
+
+        is CheerLotSheet.Inquiry -> {
+            ModalBottomSheet(
+                onDismissRequest = presentationState::dismissSheet,
+                containerColor = MaterialTheme.colorScheme.background
+            ) {
+                InquiryWebViewSheet()
+            }
+        }
+
+        null -> Unit
     }
 
     when (presentationState.currentFullScreen) {
@@ -254,17 +288,4 @@ private fun lineupChangeDummyMembers(teamId: TeamId): List<PlayerInfo> {
                 cheerSongs = emptyList()
             )
         }
-}
-
-// 임시뷰
-@Composable
-private fun SheetPlaceholderContent(sheet: CheerLotSheet) {
-    val title = when (sheet) {
-        is CheerLotSheet.CheerSongList -> "CheerSongList(memberId=${sheet.member.id})"
-        is CheerLotSheet.LineupChange -> "LineupChange(memberId=${sheet.member.id})"
-        is CheerLotSheet.TeamChange -> "TeamChange(selectedTeamId=${sheet.selectedTeamId})"
-        CheerLotSheet.Inquiry -> "Inquiry"
-        CheerLotSheet.ServicePage -> "ServicePage"
-    }
-    Text(text = "Sheet / $title", modifier = Modifier.padding(24.dp))
 }
