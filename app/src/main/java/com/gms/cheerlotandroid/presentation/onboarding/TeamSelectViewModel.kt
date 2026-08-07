@@ -48,6 +48,9 @@ class TeamSelectViewModel(
         viewModelScope.launch {
             updateSelectedTeamUseCase(teamId)
             onComplete()
+            // 이 ViewModel은 CHANGE 모드에서 시트를 열 때마다 새로 만들어지지 않고 재사용되므로,
+            // 여기서 풀어주지 않으면 두 번째 팀 변경부터 isSubmitting=true에 막혀 완료가 계속 무시됩니다.
+            _uiState.update { it.copy(isSubmitting = false) }
         }
     }
 }
