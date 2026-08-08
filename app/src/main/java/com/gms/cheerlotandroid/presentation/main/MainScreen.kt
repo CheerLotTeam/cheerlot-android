@@ -102,6 +102,7 @@ private fun MainContent(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // TODO: tabNavController/currentDestination, MiniPlayerViewModel 상태 구독, 탭 변경 side effect를 Stateful MainScreen으로 옮겨 MainContent는 상태와 콜백만 받는 Stateless UI로 정리합니다.
     val tabNavController = rememberNavController()
     val tabBackStackEntry by tabNavController.currentBackStackEntryAsState()
     val currentDestination = CheerLotMainTab.entries.firstOrNull {
@@ -270,6 +271,7 @@ private fun MainBottomNavigationBar(
 private fun TeamMembersTab(
     onOpenSettings: () -> Unit
 ) {
+    // TODO: TeamMembersScreen을 Stateful 진입점으로, 현재 TeamMembersScreen UI를 private TeamMembersContent로 분리한 뒤 이 중간 Tab composable을 제거합니다.
     val viewModel: TeamMembersViewModel =
         viewModel(factory = LocalAppContainer.current.viewModelFactory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -290,6 +292,7 @@ private fun TeamMembersTab(
 
 @Composable
 private fun SearchTab() {
+    // TODO: 검색 기능 구현 시 SearchScreen을 Stateful 진입점으로 만들고 실제 UI는 private SearchContent로 분리한 뒤 이 placeholder Tab composable을 제거합니다.
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {

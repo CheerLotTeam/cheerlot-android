@@ -7,6 +7,7 @@ import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
+import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayLineupSongsUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamGameScheduleUseCase
@@ -37,6 +38,7 @@ private val seoulZoneId: ZoneId = ZoneId.of("Asia/Seoul")
 @OptIn(ExperimentalCoroutinesApi::class)
 class LineupViewModel(
     private val getSelectedTeamUseCase: GetSelectedTeamUseCase,
+    private val getAllPlayersUseCase: GetAllPlayersUseCase,
     private val getLineupUseCase: GetLineupUseCase,
     private val getLineupGameInfoUseCase: GetLineupGameInfoUseCase,
     private val getTeamGameScheduleUseCase: GetTeamGameScheduleUseCase,
@@ -99,6 +101,7 @@ class LineupViewModel(
 
                         // 새로고침도 최초 로드와 동일한 순서를 사용해 실패 후 관찰을 다시 시작합니다.
                         getTeamGameScheduleUseCase(teamId)
+                        getAllPlayersUseCase(teamId)
                         val playersFlow = getLineupUseCase(teamId)
                         val gameInfoFlow = getLineupGameInfoUseCase(teamId)
                         val todayDate = currentDateProvider()

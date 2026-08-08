@@ -21,6 +21,14 @@ interface PlayerDao {
     fun observeAllByTeamWithCheerSongs(teamId: String): Flow<List<PlayerWithCheerSongs>>
 
     @Transaction
+    @Query(
+        "SELECT * FROM players " +
+            "WHERE team_id = :teamId AND batting_order IS NULL " +
+            "ORDER BY name ASC"
+    )
+    fun observeBenchWithCheerSongs(teamId: String): Flow<List<PlayerWithCheerSongs>>
+
+    @Transaction
     @Query("SELECT * FROM players WHERE player_id = :playerId")
     suspend fun getPlayerWithCheerSongs(playerId: String): PlayerWithCheerSongs?
 
@@ -35,6 +43,30 @@ interface PlayerDao {
 
     @Upsert
     suspend fun upsert(player: PlayerEntity)
+
+    @Query(
+        "UPDATE players SET batting_order = NULL " +
+            "WHERE team_id = :teamId " +
+            "AND player_id = :lineupPlayerId " +
+            "AND batting_order = :battingOrder"
+    )
+    suspend fun removeFromLineup(
+        teamId: String,
+        lineupPlayerId: String,
+        battingOrder: Int
+    ): Int
+
+    @Query(
+        "UPDATE players SET batting_order = :battingOrder " +
+            "WHERE team_id = :teamId " +
+            "AND player_id = :benchPlayerId " +
+            "AND batting_order IS NULL"
+    )
+    suspend fun addToLineup(
+        teamId: String,
+        benchPlayerId: String,
+        battingOrder: Int
+    ): Int
 
     // syncAllPlayers의 완전 교체 전략에서 사용. FK CASCADE라 cheer_songs도 같이 삭제됩니다.
     @Query("DELETE FROM players WHERE team_id = :teamId")
