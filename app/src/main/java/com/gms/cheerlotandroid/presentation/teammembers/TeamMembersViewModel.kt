@@ -2,7 +2,6 @@ package com.gms.cheerlotandroid.presentation.teammembers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayTeamMembersUseCase
@@ -49,7 +48,7 @@ internal class TeamMembersViewModel(
             } else {
                 refreshCount.flatMapLatest { refreshIndex ->
                     flow { emitAll(getAllPlayersUseCase(teamId)) }
-                        .map { players -> TeamMembersUiState(teamId = teamId, rows = buildRows(players)) }
+                        .map { players -> TeamMembersUiState(teamId = teamId, rows = players.toTeamMembersRows()) }
                         .onStart {
                             emit(
                                 TeamMembersUiState(
@@ -96,19 +95,4 @@ internal class TeamMembersViewModel(
     fun onSnackbarShown() {
         snackbarMessage.value = null
     }
-}
-
-// 응원가 있는 선수 먼저, 그다음 이름순. 선수당 응원가가 여러 개면 곡 개수만큼 row로 펼칩니다(iOS TeamMembersViewModel과 동일).
-private fun buildRows(players: List<PlayerInfo>): List<TeamMembersRow> {
-    return players
-        .sortedWith(compareByDescending<PlayerInfo> { it.cheerSongs.isNotEmpty() }.thenBy { it.name })
-        .flatMap { player ->
-            if (player.cheerSongs.isEmpty()) {
-                listOf(TeamMembersRow(id = "${player.id.value}-empty", playerName = player.name, backNumber = player.backNumber, song = null))
-            } else {
-                player.cheerSongs.map { song ->
-                    TeamMembersRow(id = "${player.id.value}-${song.id}", playerName = player.name, backNumber = player.backNumber, song = song)
-                }
-            }
-        }
 }
