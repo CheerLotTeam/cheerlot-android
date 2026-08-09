@@ -10,6 +10,7 @@ import com.gms.cheerlotandroid.presentation.main.MainViewModel
 import com.gms.cheerlotandroid.presentation.main.MiniPlayerViewModel
 import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
 import com.gms.cheerlotandroid.presentation.search.SearchViewModel
+import com.gms.cheerlotandroid.presentation.settings.SettingsViewModel
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 
 // 화면별 ViewModel 생성 규칙을 한 곳에 모아두는 Factory입니다.
@@ -90,6 +91,12 @@ class CheerLotViewModelFactory(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
                     getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
                     playSearchResultUseCase = appContainer.playSearchResultUseCase,
+                ) as T
+            }
+
+            modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
+                SettingsViewModel(
+                    getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
                 ) as T
             }
 
