@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.gms.cheerlotandroid.presentation.appflow.AppFlowViewModel
 import com.gms.cheerlotandroid.presentation.lineup.LineupViewModel
+import com.gms.cheerlotandroid.presentation.lineupchange.LineupChangeViewModel
 import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackViewModel
 import com.gms.cheerlotandroid.presentation.main.MainViewModel
 import com.gms.cheerlotandroid.presentation.main.MiniPlayerViewModel
@@ -50,6 +51,7 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(LineupViewModel::class.java) -> {
                 LineupViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
                     getLineupUseCase = appContainer.getLineupUseCase,
                     getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
                     getTeamGameScheduleUseCase = appContainer.getTeamGameScheduleUseCase,
@@ -65,6 +67,13 @@ class CheerLotViewModelFactory(
                     getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
                     getTeamUseCase = appContainer.getTeamUseCase,
                     audioPlayer = appContainer.audioPlayer,
+                ) as T
+            }
+
+            modelClass.isAssignableFrom(LineupChangeViewModel::class.java) -> {
+                LineupChangeViewModel(
+                    getBenchPlayersUseCase = appContainer.getBenchPlayersUseCase,
+                    swapLineupPlayersUseCase = appContainer.swapLineupPlayersUseCase,
                 ) as T
             }
 

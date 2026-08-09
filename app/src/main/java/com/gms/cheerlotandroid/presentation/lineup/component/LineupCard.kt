@@ -23,9 +23,12 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.R
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
@@ -88,7 +91,17 @@ internal fun LineupCard(
         ) {
             Text(
                 text = state.teamEnglishName,
-                style = CheerLotTextStyle.T1,
+                style = CheerLotTextStyle.T1.merge(
+                    TextStyle(
+                        shadow = LocalDensity.current.run {
+                            Shadow(
+                                color = colors.cardTextShadowColor,
+                                blurRadius = 8.dp.toPx(),
+                                offset = Offset(0f, 1.dp.toPx())
+                            )
+                        }
+                    )
+                ),
                 color = GrayScaleColor.GrayWhite,
                 maxLines = 1,
                 modifier = Modifier.height(teamNameHeight)
