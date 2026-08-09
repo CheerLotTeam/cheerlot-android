@@ -25,6 +25,4 @@ sealed interface CheerLotSheet {
     ) : CheerLotSheet
 
     data object Inquiry : CheerLotSheet
-
-    data object ServicePage : CheerLotSheet
 }

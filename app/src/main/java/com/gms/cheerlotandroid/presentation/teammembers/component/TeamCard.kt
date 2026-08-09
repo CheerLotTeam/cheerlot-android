@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +34,7 @@ import com.gms.cheerlotandroid.domain.model.team.TeamInfo
 // 호출부가 TeamTheme(teamId) { ... }로 감싸져 있다는 전제로 TeamTheme.colors를 바로 읽습니다.
 // 배경 텍스처(team_card_bg, 소프트라이트 블렌드)는 LineupCard와 동일한 에셋/방식을 재사용합니다.
 @Composable
-internal fun TeamCard(team: TeamInfo, modifier: Modifier = Modifier) {
+internal fun TeamCard(team: TeamInfo, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val shape = RoundedCornerShape(12.dp)
     val colors = TeamTheme.colors
 
@@ -41,6 +42,7 @@ internal fun TeamCard(team: TeamInfo, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .background(colors.primary)
             .border(2.dp, colors.primaryPalette.color200, shape)
     ) {
