@@ -109,6 +109,7 @@ fun CheerLotNavHost(
                 onTapInquiry = {
                     presentationState.showSheet(CheerLotSheet.Inquiry)
                 },
+                onDismissToast = viewModel::dismissToast,
                 onBack = navController::navigateUp
             )
         }

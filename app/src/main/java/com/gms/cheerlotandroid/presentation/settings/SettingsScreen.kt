@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.R
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.color.team.TeamColor
+import com.gms.cheerlotandroid.design.component.CustomToastMessage
 import com.gms.cheerlotandroid.design.component.CustomTopAppBarBackWithTitle
 import com.gms.cheerlotandroid.design.component.TeamCard
 import com.gms.cheerlotandroid.design.theme.TeamTheme
@@ -48,6 +49,7 @@ internal fun SettingsScreen(
     onTapServiceInfo: () -> Unit,
     onTapMakerInfo: () -> Unit,
     onTapInquiry: () -> Unit,
+    onDismissToast: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -95,6 +97,12 @@ internal fun SettingsScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 40.dp)
+            )
+
+            CustomToastMessage(
+                message = state.toastMessage,
+                isVisible = state.isToastVisible,
+                onDismiss = onDismissToast
             )
         }
     }

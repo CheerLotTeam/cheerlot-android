@@ -21,7 +21,9 @@ class UserSettingsRepositoryImpl(
             ?: AppIconMode.BASE
     }
 
-    override suspend fun setAppIconMode(mode: AppIconMode) {
-        dataStore.edit { preferences -> preferences[APP_ICON_MODE_KEY] = mode.name }
+    override suspend fun setAppIconMode(mode: AppIconMode): Result<Unit> {
+        return runCatching {
+            dataStore.edit { preferences -> preferences[APP_ICON_MODE_KEY] = mode.name }
+        }.map {}
     }
 }

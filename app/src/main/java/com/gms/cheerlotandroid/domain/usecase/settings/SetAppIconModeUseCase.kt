@@ -6,5 +6,5 @@ import com.gms.cheerlotandroid.domain.repository.UserSettingsRepository
 class SetAppIconModeUseCase(
     private val userSettingsRepository: UserSettingsRepository
 ) {
-    suspend operator fun invoke(mode: AppIconMode) = userSettingsRepository.setAppIconMode(mode)
+    suspend operator fun invoke(mode: AppIconMode): Result<Unit> = userSettingsRepository.setAppIconMode(mode)
 }

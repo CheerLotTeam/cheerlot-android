@@ -6,5 +6,7 @@ import com.gms.cheerlotandroid.domain.model.team.TeamInfo
 internal data class SettingsUiState(
     val currentTeam: TeamInfo? = null,
     val appIconMode: AppIconMode = AppIconMode.BASE,
-    val appVersion: String = ""
+    val appVersion: String = "",
+    val toastMessage: String = "",
+    val isToastVisible: Boolean = false
 )
