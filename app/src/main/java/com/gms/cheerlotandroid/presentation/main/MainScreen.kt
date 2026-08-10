@@ -283,7 +283,7 @@ private fun TeamMembersTab(
         onTapSong = { row ->
             viewModel.onTapSong(row)
         },
-        onSnackbarShown = viewModel::onSnackbarShown,
+        onDismissToast = viewModel::dismissToast,
         onOpenSettings = onOpenSettings
     )
 }
@@ -309,7 +309,7 @@ private fun SearchTab(
                 onOpenBasePlayback(teamId, song.id, row.playerName)
             }
         },
-        onSnackbarShown = viewModel::onSnackbarShown
+        onDismissToast = viewModel::dismissToast
     )
 }
 

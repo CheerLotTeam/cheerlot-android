@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 internal data class TeamMembersUiState(
     val teamId: TeamId? = null,
@@ -26,7 +27,8 @@ internal data class TeamMembersUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
-    val snackbarMessage: String? = null
+    val toastMessage: String = "",
+    val isToastVisible: Boolean = false
 ) {
     val totalSongCount: Int get() = rows.count { it.hasSong }
 }
@@ -38,8 +40,13 @@ internal class TeamMembersViewModel(
     private val playTeamMembersUseCase: PlayTeamMembersUseCase
 ) : ViewModel() {
 
+    private data class ToastState(
+        val message: String = "",
+        val isVisible: Boolean = false
+    )
+
     private val refreshCount = MutableStateFlow(0)
-    private val snackbarMessage = MutableStateFlow<String?>(null)
+    private val toastState = MutableStateFlow(ToastState())
 
     private val contentState = getSelectedTeamUseCase()
         .flatMapLatest { teamId ->
@@ -70,8 +77,8 @@ internal class TeamMembersViewModel(
             }
         }
 
-    val uiState: StateFlow<TeamMembersUiState> = combine(contentState, snackbarMessage) { state, message ->
-        state.copy(snackbarMessage = message)
+    val uiState: StateFlow<TeamMembersUiState> = combine(contentState, toastState) { state, toast ->
+        state.copy(toastMessage = toast.message, isToastVisible = toast.isVisible)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TeamMembersUiState())
 
     fun refresh() {
@@ -86,13 +93,13 @@ internal class TeamMembersViewModel(
     fun onTapSong(row: TeamMembersRow) {
         val teamId = uiState.value.teamId ?: return
         if (!row.hasSong) {
-            snackbarMessage.value = "아직 개인 응원가가 없어요"
+            toastState.value = ToastState(message = "아직 개인 응원가가 없어요", isVisible = true)
             return
         }
         playTeamMembersUseCase.playSelected(row, uiState.value.rows, teamId)
     }
 
-    fun onSnackbarShown() {
-        snackbarMessage.value = null
+    fun dismissToast() {
+        toastState.update { it.copy(isVisible = false) }
     }
 }

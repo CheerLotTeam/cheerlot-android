@@ -8,7 +8,8 @@ internal data class SearchUiState(
     val query: String = "",
     val results: List<TeamMembersRow> = emptyList(),
     val isLoading: Boolean = false,
-    val snackbarMessage: String? = null
+    val toastMessage: String = "",
+    val isToastVisible: Boolean = false
 ) {
     val totalSongCount: Int get() = results.count { it.hasSong }
 }
