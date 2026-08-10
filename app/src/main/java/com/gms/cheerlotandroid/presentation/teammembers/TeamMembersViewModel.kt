@@ -2,7 +2,6 @@ package com.gms.cheerlotandroid.presentation.teammembers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayTeamMembersUseCase
@@ -20,6 +19,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 internal data class TeamMembersUiState(
     val teamId: TeamId? = null,
@@ -27,7 +27,8 @@ internal data class TeamMembersUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
-    val snackbarMessage: String? = null
+    val toastMessage: String = "",
+    val isToastVisible: Boolean = false
 ) {
     val totalSongCount: Int get() = rows.count { it.hasSong }
 }
@@ -39,8 +40,13 @@ internal class TeamMembersViewModel(
     private val playTeamMembersUseCase: PlayTeamMembersUseCase
 ) : ViewModel() {
 
+    private data class ToastState(
+        val message: String = "",
+        val isVisible: Boolean = false
+    )
+
     private val refreshCount = MutableStateFlow(0)
-    private val snackbarMessage = MutableStateFlow<String?>(null)
+    private val toastState = MutableStateFlow(ToastState())
 
     private val contentState = getSelectedTeamUseCase()
         .flatMapLatest { teamId ->
@@ -49,7 +55,7 @@ internal class TeamMembersViewModel(
             } else {
                 refreshCount.flatMapLatest { refreshIndex ->
                     flow { emitAll(getAllPlayersUseCase(teamId)) }
-                        .map { players -> TeamMembersUiState(teamId = teamId, rows = buildRows(players)) }
+                        .map { players -> TeamMembersUiState(teamId = teamId, rows = players.toTeamMembersRows()) }
                         .onStart {
                             emit(
                                 TeamMembersUiState(
@@ -71,8 +77,8 @@ internal class TeamMembersViewModel(
             }
         }
 
-    val uiState: StateFlow<TeamMembersUiState> = combine(contentState, snackbarMessage) { state, message ->
-        state.copy(snackbarMessage = message)
+    val uiState: StateFlow<TeamMembersUiState> = combine(contentState, toastState) { state, toast ->
+        state.copy(toastMessage = toast.message, isToastVisible = toast.isVisible)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TeamMembersUiState())
 
     fun refresh() {
@@ -87,28 +93,13 @@ internal class TeamMembersViewModel(
     fun onTapSong(row: TeamMembersRow) {
         val teamId = uiState.value.teamId ?: return
         if (!row.hasSong) {
-            snackbarMessage.value = "아직 개인 응원가가 없어요"
+            toastState.value = ToastState(message = "아직 개인 응원가가 없어요", isVisible = true)
             return
         }
         playTeamMembersUseCase.playSelected(row, uiState.value.rows, teamId)
     }
 
-    fun onSnackbarShown() {
-        snackbarMessage.value = null
+    fun dismissToast() {
+        toastState.update { it.copy(isVisible = false) }
     }
-}
-
-// 응원가 있는 선수 먼저, 그다음 이름순. 선수당 응원가가 여러 개면 곡 개수만큼 row로 펼칩니다(iOS TeamMembersViewModel과 동일).
-private fun buildRows(players: List<PlayerInfo>): List<TeamMembersRow> {
-    return players
-        .sortedWith(compareByDescending<PlayerInfo> { it.cheerSongs.isNotEmpty() }.thenBy { it.name })
-        .flatMap { player ->
-            if (player.cheerSongs.isEmpty()) {
-                listOf(TeamMembersRow(id = "${player.id.value}-empty", playerName = player.name, backNumber = player.backNumber, song = null))
-            } else {
-                player.cheerSongs.map { song ->
-                    TeamMembersRow(id = "${player.id.value}-${song.id}", playerName = player.name, backNumber = player.backNumber, song = song)
-                }
-            }
-        }
 }

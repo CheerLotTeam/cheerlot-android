@@ -1,7 +1,6 @@
 package com.gms.cheerlotandroid.presentation.main
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -25,10 +24,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,7 +39,6 @@ import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.core.navigation.CheerLotDialog
 import com.gms.cheerlotandroid.core.navigation.CheerLotMainTab
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
-import com.gms.cheerlotandroid.design.component.CustomTopAppBarLargeTitle
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
@@ -50,6 +46,8 @@ import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.LineupScreen
 import com.gms.cheerlotandroid.presentation.lineup.LineupTapAction
+import com.gms.cheerlotandroid.presentation.search.SearchScreen
+import com.gms.cheerlotandroid.presentation.search.SearchViewModel
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersScreen
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 
@@ -177,7 +175,7 @@ private fun MainContent(
                 )
             }
             composable(CheerLotMainTab.SEARCH.route) {
-                SearchTab()
+                SearchTab(onOpenBasePlayback = onOpenBasePlayback)
             }
         }
     }
@@ -285,58 +283,35 @@ private fun TeamMembersTab(
         onTapSong = { row ->
             viewModel.onTapSong(row)
         },
-        onSnackbarShown = viewModel::onSnackbarShown,
+        onDismissToast = viewModel::dismissToast,
         onOpenSettings = onOpenSettings
     )
 }
 
 @Composable
-private fun SearchTab() {
-    // TODO: 검색 기능 구현 시 SearchScreen을 Stateful 진입점으로 만들고 실제 UI는 private SearchContent로 분리한 뒤 이 placeholder Tab composable을 제거합니다.
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            CustomTopAppBarLargeTitle(title = "검색")
-        },
-        contentWindowInsets =
-            WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
-        ) {
-            MainTabPlaceholder(
-                destination = CheerLotMainTab.SEARCH
-            )
-        }
-    }
-}
-
-@Composable
-private fun MainTabPlaceholder(
-    destination: CheerLotMainTab,
-    modifier: Modifier = Modifier
+private fun SearchTab(
+    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit
 ) {
-    Column(
-        modifier = modifier.padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = destination.label,
-            style = CheerLotTextStyle.B3,
-            color = GrayScaleColor.Gray900,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = "화면 구현 예정",
-            style = CheerLotTextStyle.R2,
-            color = GrayScaleColor.Gray500,
-            textAlign = TextAlign.Center
-        )
-    }
+    val viewModel: SearchViewModel =
+        viewModel(factory = LocalAppContainer.current.viewModelFactory)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    SearchScreen(
+        state = uiState,
+        onQueryChange = viewModel::onQueryChange,
+        // iOS SearchView와 동일하게, 전체선수 탭과 달리 결과를 탭하면 재생 시작과 동시에
+        // 미니플레이어 없이 바로 전체화면 재생화면을 엽니다.
+        onTapResult = { row ->
+            viewModel.onTapResult(row)
+            val teamId = uiState.teamId
+            val song = row.song
+            if (teamId != null && song != null) {
+                onOpenBasePlayback(teamId, song.id, row.playerName)
+            }
+        },
+        onRetry = viewModel::retry,
+        onDismissToast = viewModel::dismissToast
+    )
 }
 
 // MainTabScreen 전체는 LocalAppContainer(DI)가 필요해 프리뷰에서 크래시나므로,

@@ -9,6 +9,7 @@ import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackViewMod
 import com.gms.cheerlotandroid.presentation.main.MainViewModel
 import com.gms.cheerlotandroid.presentation.main.MiniPlayerViewModel
 import com.gms.cheerlotandroid.presentation.playback.PlaybackViewModel
+import com.gms.cheerlotandroid.presentation.search.SearchViewModel
 import com.gms.cheerlotandroid.presentation.settings.SettingsViewModel
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 
@@ -33,6 +34,8 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(MainViewModel::class.java) -> {
                 MainViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getAppIconModeUseCase = appContainer.getAppIconModeUseCase,
+                    appIconSwitcher = appContainer.appIconSwitcher,
                 ) as T
             }
 
@@ -85,9 +88,20 @@ class CheerLotViewModelFactory(
                 ) as T
             }
 
+            modelClass.isAssignableFrom(SearchViewModel::class.java) -> {
+                SearchViewModel(
+                    getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
+                    playSearchResultUseCase = appContainer.playSearchResultUseCase,
+                ) as T
+            }
+
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
                 SettingsViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getAppIconModeUseCase = appContainer.getAppIconModeUseCase,
+                    setAppIconModeUseCase = appContainer.setAppIconModeUseCase,
+                    appIconSwitcher = appContainer.appIconSwitcher,
                 ) as T
             }
 
