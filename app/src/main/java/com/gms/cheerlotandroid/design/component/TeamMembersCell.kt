@@ -1,4 +1,4 @@
-package com.gms.cheerlotandroid.presentation.teammembers.component
+package com.gms.cheerlotandroid.design.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -20,7 +20,7 @@ import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersRow
 
 @Composable
-internal fun TeamMembersCell(
+fun TeamMembersCell(
     row: TeamMembersRow,
     primaryColor: Color,
     onClick: () -> Unit,

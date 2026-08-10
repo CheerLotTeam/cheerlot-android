@@ -29,6 +29,7 @@ import com.gms.cheerlotandroid.R
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.color.team.TeamColor
 import com.gms.cheerlotandroid.design.component.CustomTopAppBarBackWithTitle
+import com.gms.cheerlotandroid.design.component.TeamCard
 import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.settings.AppIconMode
@@ -36,7 +37,6 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.model.team.TeamInfo
 import com.gms.cheerlotandroid.presentation.settings.component.SettingsMenuCard
 import com.gms.cheerlotandroid.presentation.settings.component.SettingsSection
-import com.gms.cheerlotandroid.presentation.teammembers.component.TeamCard
 
 private val supportMenuTitles = listOf("서비스 소개", "쳐랏 팀", "문의하기")
 
