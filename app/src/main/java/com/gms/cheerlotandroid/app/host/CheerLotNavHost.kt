@@ -99,6 +99,7 @@ fun CheerLotNavHost(
                         presentationState.showSheet(CheerLotSheet.TeamChange(selectedTeamId = team.id))
                     }
                 },
+                onSelectAppIconMode = viewModel::onSelectAppIconMode,
                 onTapServiceInfo = {
                     navController.navigate(CheerLotRoute.ServiceInfo.route)
                 },

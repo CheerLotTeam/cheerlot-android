@@ -6,14 +6,18 @@ import com.gms.cheerlotandroid.data.network.NetworkModule
 import com.gms.cheerlotandroid.data.repository.PlayerRepositoryImpl
 import com.gms.cheerlotandroid.data.repository.TeamRepositoryImpl
 import com.gms.cheerlotandroid.data.repository.TeamSelectionRepositoryImpl
+import com.gms.cheerlotandroid.data.repository.UserSettingsRepositoryImpl
 import com.gms.cheerlotandroid.data.source.TeamCatalog
 import com.gms.cheerlotandroid.data.storage.datastore.teamSelectionDataStore
+import com.gms.cheerlotandroid.data.storage.datastore.userSettingsDataStore
 import com.gms.cheerlotandroid.data.storage.local.CheerLotDatabase
 import com.gms.cheerlotandroid.data.storage.local.CheerLotDatabaseMigrations
+import com.gms.cheerlotandroid.core.icon.AppIconSwitcher
 import com.gms.cheerlotandroid.core.media.AudioPlaybackPlayer
 import com.gms.cheerlotandroid.domain.repository.PlayerRepository
 import com.gms.cheerlotandroid.domain.repository.TeamRepository
 import com.gms.cheerlotandroid.domain.repository.TeamSelectionRepository
+import com.gms.cheerlotandroid.domain.repository.UserSettingsRepository
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetBenchPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
@@ -23,6 +27,8 @@ import com.gms.cheerlotandroid.domain.usecase.playback.PlaySearchResultUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayTeamMembersUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetPlayerDetailUseCase
+import com.gms.cheerlotandroid.domain.usecase.settings.GetAppIconModeUseCase
+import com.gms.cheerlotandroid.domain.usecase.settings.SetAppIconModeUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetAllTeamsUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamUseCase
@@ -79,6 +85,12 @@ class AppContainer(
     val teamSelectionRepository: TeamSelectionRepository by lazy {
         TeamSelectionRepositoryImpl(
             dataStore = appContext.teamSelectionDataStore,
+        )
+    }
+
+    val userSettingsRepository: UserSettingsRepository by lazy {
+        UserSettingsRepositoryImpl(
+            dataStore = appContext.userSettingsDataStore,
         )
     }
 
@@ -140,6 +152,18 @@ class AppContainer(
 
     val playSearchResultUseCase: PlaySearchResultUseCase by lazy {
         PlaySearchResultUseCase(audioPlayer = audioPlayer)
+    }
+
+    val appIconSwitcher: AppIconSwitcher by lazy {
+        AppIconSwitcher(context = appContext)
+    }
+
+    val getAppIconModeUseCase: GetAppIconModeUseCase by lazy {
+        GetAppIconModeUseCase(userSettingsRepository = userSettingsRepository)
+    }
+
+    val setAppIconModeUseCase: SetAppIconModeUseCase by lazy {
+        SetAppIconModeUseCase(userSettingsRepository = userSettingsRepository)
     }
 
     // ViewModel 인스턴스는 Android ViewModelStore가 관리하고, Factory는 생성 방법만 제공합니다.

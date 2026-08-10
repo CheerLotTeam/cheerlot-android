@@ -34,6 +34,8 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(MainViewModel::class.java) -> {
                 MainViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getAppIconModeUseCase = appContainer.getAppIconModeUseCase,
+                    appIconSwitcher = appContainer.appIconSwitcher,
                 ) as T
             }
 
@@ -97,6 +99,9 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
                 SettingsViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    getAppIconModeUseCase = appContainer.getAppIconModeUseCase,
+                    setAppIconModeUseCase = appContainer.setAppIconModeUseCase,
+                    appIconSwitcher = appContainer.appIconSwitcher,
                 ) as T
             }
 
