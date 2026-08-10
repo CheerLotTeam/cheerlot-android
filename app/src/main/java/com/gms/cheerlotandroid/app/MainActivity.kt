@@ -49,4 +49,11 @@ class MainActivity : ComponentActivity() {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+
+    // 런처 아이콘 전환(activity-alias 활성 상태 변경)은 그 즉시 시스템이 앱을 포그라운드에서
+    // 내려버리는 부작용이 있어서, 어차피 화면을 벗어나는 이 시점까지 미뤄서 반영합니다.
+    override fun onPause() {
+        super.onPause()
+        appContainer.appIconSwitcher.applyPending()
+    }
 }

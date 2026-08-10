@@ -38,13 +38,13 @@ internal class SettingsViewModel(
             initialValue = SettingsUiState(appVersion = BuildConfig.VERSION_NAME)
         )
 
-    // iOS SettingViewModel.didSelectAppIconMode와 동일하게, 저장과 동시에 즉시 아이콘을
-    // 반영합니다(MainViewModel의 반응형 동기화만 믿으면 설정 화면을 나가야 반영되는 지연이 생김).
+    // 선택 즉시 PackageManager에 반영하면 시스템이 앱을 포그라운드에서 내려버려서, 원하는
+    // 상태만 기록해두고 실제 반영은 MainActivity.onPause()에서 처리합니다.
     fun onSelectAppIconMode(mode: AppIconMode) {
         val teamId = uiState.value.currentTeam?.id
         viewModelScope.launch {
             setAppIconModeUseCase(mode)
-            appIconSwitcher.switchTo(teamId, mode)
+            appIconSwitcher.requestSwitch(teamId, mode)
         }
     }
 }

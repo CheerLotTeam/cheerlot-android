@@ -22,10 +22,10 @@ class MainViewModel(
         getSelectedTeamUseCase(),
         getAppIconModeUseCase()
     ) { selectedTeamId, appIconMode -> selectedTeamId to appIconMode }
-        // 앱 진입/팀 변경/아이콘 모드 변경마다 현재 상태에 맞는 런처 아이콘으로 동기화합니다.
-        // 백업 복원 등으로 DataStore와 PackageManager의 컴포넌트 활성 상태가 어긋날 수 있어,
-        // Main 화면을 구독할 때마다(재구독 포함) 매번 다시 맞춰줍니다.
-        .onEach { (selectedTeamId, appIconMode) -> appIconSwitcher.switchTo(selectedTeamId, appIconMode) }
+        // 앱 진입/팀 변경/아이콘 모드 변경마다 원하는 런처 아이콘 상태를 기록해둡니다.
+        // 실제 PackageManager 반영은 MainActivity.onPause()에서 한 번에 처리합니다
+        // (즉시 반영하면 시스템이 앱을 포그라운드에서 내려버리는 부작용이 있어서).
+        .onEach { (selectedTeamId, appIconMode) -> appIconSwitcher.requestSwitch(selectedTeamId, appIconMode) }
         .map { (selectedTeamId, _) -> MainUiState(selectedTeamId = selectedTeamId) }
         .stateIn(
             scope = viewModelScope,

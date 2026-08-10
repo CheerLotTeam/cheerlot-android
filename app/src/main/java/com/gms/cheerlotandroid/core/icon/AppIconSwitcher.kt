@@ -14,9 +14,26 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 // "Activity class ... does not exist")가 되기 때문입니다.
 class AppIconSwitcher(private val context: Context) {
 
+    // PackageManager로 컴포넌트 활성 상태를 바꾸는 순간 시스템이 앱을 포그라운드에서 내려버려서,
+    // 요청 시점엔 원하는 상태만 기억해두고 실제 반영은 화면을 벗어나는 시점(applyPending)까지
+    // 미룹니다. 그때는 어차피 화면을 나가는 중이라 사용자가 "튕겼다"고 느끼지 않습니다.
+    // (참고: https://medium.com/madoc-developer/android-배포-없이-app-icon-변경하기-2a8ca63ecae6)
+    private var pending: Pair<TeamId?, AppIconMode>? = null
+
     // iOS SettingViewModel.applyCurrentAppIcon과 동일하게, mode가 TEAM일 때만 팀 아이콘을
     // 적용하고 BASE거나 팀 미선택 상태면 항상 기본 아이콘으로 돌아갑니다.
-    fun switchTo(teamId: TeamId?, mode: AppIconMode) {
+    fun requestSwitch(teamId: TeamId?, mode: AppIconMode) {
+        pending = teamId to mode
+    }
+
+    // MainActivity.onPause()에서 호출합니다. 대기 중인 요청이 없으면 아무 일도 하지 않습니다.
+    fun applyPending() {
+        val (teamId, mode) = pending ?: return
+        pending = null
+        switchTo(teamId, mode)
+    }
+
+    private fun switchTo(teamId: TeamId?, mode: AppIconMode) {
         val target = if (mode == AppIconMode.TEAM) {
             teamId?.let { aliasClassNameFor(it) } ?: DEFAULT_ALIAS_CLASS_NAME
         } else {
