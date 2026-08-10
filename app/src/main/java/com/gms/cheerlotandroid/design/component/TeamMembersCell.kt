@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -47,7 +46,6 @@ fun TeamMembersCell(
         Icon(
             imageVector = Icons.Filled.PlayArrow,
             contentDescription = if (row.hasSong) "재생" else "응원가 없음",
-            modifier = Modifier.size(22.dp),
             tint = if (row.hasSong) primaryColor else GrayScaleColor.Gray200
         )
     }
