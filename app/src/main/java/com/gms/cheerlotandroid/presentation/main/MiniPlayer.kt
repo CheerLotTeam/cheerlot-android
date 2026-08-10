@@ -31,7 +31,6 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.gms.cheerlotandroid.R
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.color.team.TeamColor
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
@@ -105,7 +104,9 @@ private fun MiniPlayerCover(
     teamId: TeamId?,
     modifier: Modifier = Modifier
 ) {
-    val coverResId = teamId?.let(::teamCoverDrawableFor)
+    // 원본 커버(594x594)를 40dp로 직접 축소하면 그라데이션에 디더링 노이즈가 생겨서,
+    // 미니플레이어 전용으로 미리 축소해둔 썸네일(256x256)을 씁니다.
+    val coverResId = teamId?.let(TeamColor::coverThumbnailRes)
 
     Box(
         modifier = modifier
@@ -124,24 +125,6 @@ private fun MiniPlayerCover(
                 filterQuality = FilterQuality.High
             )
         }
-    }
-}
-
-// 원본 커버(594x594)를 40dp로 직접 축소하면 그라데이션에 디더링 노이즈가 생겨서,
-// 미니플레이어 전용으로 미리 축소해둔 썸네일(256x256)을 씁니다.
-private fun teamCoverDrawableFor(teamId: TeamId): Int? {
-    return when (TeamColor.assetPrefixFor(teamId)) {
-        "hh" -> R.drawable.team_cover_thumb_hh
-        "lg" -> R.drawable.team_cover_thumb_lg
-        "lt" -> R.drawable.team_cover_thumb_lt
-        "ss" -> R.drawable.team_cover_thumb_ss
-        "nc" -> R.drawable.team_cover_thumb_nc
-        "kt" -> R.drawable.team_cover_thumb_kt
-        "ssg" -> R.drawable.team_cover_thumb_ssg
-        "ds" -> R.drawable.team_cover_thumb_ds
-        "kw" -> R.drawable.team_cover_thumb_kw
-        "kia" -> R.drawable.team_cover_thumb_kia
-        else -> null
     }
 }
 

@@ -356,9 +356,7 @@ class AudioPlaybackPlayer(context: Context) : AudioPlayer {
     // 알림/잠금화면도 594x594 원본을 그대로 쓰면 시스템 UI가 훨씬 작은 크기로 축소하면서 디더링
     // 노이즈가 생겨서(MiniPlayer와 동일한 문제), 미리 축소해둔 256x256 썸네일을 씁니다.
     private fun coverArtUriFor(teamId: TeamId): Uri? {
-        val prefix = TeamColor.assetPrefixFor(teamId)
-        val resId = appContext.resources.getIdentifier("team_cover_thumb_$prefix", "drawable", appContext.packageName)
-        if (resId == 0) return null
+        val resId = TeamColor.coverThumbnailRes(teamId) ?: return null
         return Uri.parse("android.resource://${appContext.packageName}/$resId")
     }
 

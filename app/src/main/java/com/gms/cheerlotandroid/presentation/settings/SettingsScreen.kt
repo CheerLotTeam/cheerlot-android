@@ -187,17 +187,17 @@ private fun AppIconOption(
 }
 
 private fun teamIconRes(teamId: TeamId): Int {
-    return when (teamId.value.trim().uppercase()) {
-        "HANWHA" -> R.mipmap.ic_launcher_hanwha
-        "KIA" -> R.mipmap.ic_launcher_kia
-        "KT" -> R.mipmap.ic_launcher_kt
-        "LG" -> R.mipmap.ic_launcher_lg
-        "LOTTE" -> R.mipmap.ic_launcher_lotte
-        "NC" -> R.mipmap.ic_launcher_nc
-        "DOOSAN" -> R.mipmap.ic_launcher_doosan
-        "SSG" -> R.mipmap.ic_launcher_ssg
-        "SAMSUNG" -> R.mipmap.ic_launcher_samsung
-        "KIWOOM" -> R.mipmap.ic_launcher_kiwoom
+    return when (TeamColor.assetPrefixFor(teamId)) {
+        "hh" -> R.mipmap.ic_launcher_hanwha
+        "kia" -> R.mipmap.ic_launcher_kia
+        "kt" -> R.mipmap.ic_launcher_kt
+        "lg" -> R.mipmap.ic_launcher_lg
+        "lt" -> R.mipmap.ic_launcher_lotte
+        "nc" -> R.mipmap.ic_launcher_nc
+        "ds" -> R.mipmap.ic_launcher_doosan
+        "ssg" -> R.mipmap.ic_launcher_ssg
+        "ss" -> R.mipmap.ic_launcher_samsung
+        "kw" -> R.mipmap.ic_launcher_kiwoom
         else -> R.mipmap.ic_launcher
     }
 }

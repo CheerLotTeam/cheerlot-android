@@ -1,6 +1,7 @@
 package com.gms.cheerlotandroid.design.color.team
 
 import androidx.compose.ui.graphics.Color
+import com.gms.cheerlotandroid.R
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 
 // TeamColor: 팀 ID를 색상으로 해석하는 resolver
@@ -252,6 +253,25 @@ object TeamColor {
             "KIWOOM" -> "kw"
             "KIA" -> "kia"
             else -> error("Unknown TeamId: ${teamId.value}")
+        }
+    }
+
+    // 미니플레이어/알림·잠금화면 앨범아트가 같은 팀별 커버 썸네일(team_cover_thumb_{prefix})을
+    // 각자 다른 방식(하드코딩 when / getIdentifier 동적 조회)으로 찾고 있었어서, assetPrefixFor
+    // 기반의 매핑을 여기 한 곳으로 모읍니다. 팀이 추가/변경되면 이 함수만 고치면 됩니다.
+    fun coverThumbnailRes(teamId: TeamId): Int? {
+        return when (assetPrefixFor(teamId)) {
+            "hh" -> R.drawable.team_cover_thumb_hh
+            "lg" -> R.drawable.team_cover_thumb_lg
+            "lt" -> R.drawable.team_cover_thumb_lt
+            "ss" -> R.drawable.team_cover_thumb_ss
+            "nc" -> R.drawable.team_cover_thumb_nc
+            "kt" -> R.drawable.team_cover_thumb_kt
+            "ssg" -> R.drawable.team_cover_thumb_ssg
+            "ds" -> R.drawable.team_cover_thumb_ds
+            "kw" -> R.drawable.team_cover_thumb_kw
+            "kia" -> R.drawable.team_cover_thumb_kia
+            else -> null
         }
     }
 }
