@@ -47,7 +47,7 @@ internal fun TeamMembersCell(
         Icon(
             imageVector = Icons.Filled.PlayArrow,
             contentDescription = if (row.hasSong) "재생" else "응원가 없음",
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(22.dp),
             tint = if (row.hasSong) primaryColor else GrayScaleColor.Gray200
         )
     }
