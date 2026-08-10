@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
@@ -28,7 +29,8 @@ private const val MAX_QUERY_LENGTH = 12
 private data class TeamRows(
     val teamId: TeamId?,
     val rows: List<TeamMembersRow> = emptyList(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )
 
 // iOS SearchViewModel과 동일하게, 현재 선택된 팀 로스터 안에서만 선수 이름으로 찾습니다(전체 팀 통합
@@ -47,15 +49,26 @@ internal class SearchViewModel(
 
     private val query = MutableStateFlow("")
     private val toastState = MutableStateFlow(ToastState())
+    private val refreshCount = MutableStateFlow(0)
 
     private val teamRowsState: Flow<TeamRows> = getSelectedTeamUseCase()
         .flatMapLatest { teamId ->
             if (teamId == null) {
                 flowOf(TeamRows(teamId = null))
             } else {
-                flow { emitAll(getAllPlayersUseCase(teamId)) }
-                    .map { players -> TeamRows(teamId = teamId, rows = players.toTeamMembersRows()) }
-                    .onStart { emit(TeamRows(teamId = teamId, isLoading = true)) }
+                refreshCount.flatMapLatest {
+                    flow { emitAll(getAllPlayersUseCase(teamId)) }
+                        .map { players -> TeamRows(teamId = teamId, rows = players.toTeamMembersRows()) }
+                        .onStart { emit(TeamRows(teamId = teamId, isLoading = true)) }
+                        .catch { throwable ->
+                            emit(
+                                TeamRows(
+                                    teamId = teamId,
+                                    errorMessage = throwable.message ?: "선수 목록을 불러오지 못했습니다."
+                                )
+                            )
+                        }
+                }
             }
         }
 
@@ -70,6 +83,7 @@ internal class SearchViewModel(
                     teamRows.rows.filter { it.playerName.contains(currentQuery) }
                 },
                 isLoading = teamRows.isLoading,
+                errorMessage = teamRows.errorMessage,
                 toastMessage = toast.message,
                 isToastVisible = toast.isVisible
             )
@@ -86,6 +100,10 @@ internal class SearchViewModel(
             return
         }
         playSearchResultUseCase.play(row, uiState.value.results, teamId)
+    }
+
+    fun retry() {
+        refreshCount.value += 1
     }
 
     fun dismissToast() {

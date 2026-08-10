@@ -309,6 +309,7 @@ private fun SearchTab(
                 onOpenBasePlayback(teamId, song.id, row.playerName)
             }
         },
+        onRetry = viewModel::retry,
         onDismissToast = viewModel::dismissToast
     )
 }

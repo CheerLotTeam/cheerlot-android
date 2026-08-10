@@ -1,6 +1,7 @@
 package com.gms.cheerlotandroid.presentation.search
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ internal fun SearchScreen(
     state: SearchUiState,
     onQueryChange: (String) -> Unit,
     onTapResult: (TeamMembersRow) -> Unit,
+    onRetry: () -> Unit,
     onDismissToast: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -60,26 +62,51 @@ internal fun SearchScreen(
 
                 val teamId = state.teamId
                 when {
-                    teamId == null -> SearchMessage("설정에서 응원 팀을 선택해주세요")
-                    state.query.isBlank() -> SearchMessage("우리 팀 선수를 검색해보세요", R.drawable.no_game)
-                    state.results.isEmpty() -> SearchMessage("검색 결과가 없습니다", R.drawable.no_season)
+                    teamId == null -> SearchMessage(
+                        text = "설정에서 응원 팀을 선택해주세요",
+                        modifier = Modifier.weight(1f)
+                    )
+                    state.errorMessage != null -> SearchMessage(
+                        text = state.errorMessage,
+                        onRetry = onRetry,
+                        modifier = Modifier.weight(1f)
+                    )
+                    state.query.isBlank() -> SearchMessage(
+                        text = "우리 팀 선수를 검색해보세요",
+                        imageRes = R.drawable.no_game,
+                        modifier = Modifier.weight(1f)
+                    )
+                    state.results.isEmpty() -> SearchMessage(
+                        text = "검색 결과가 없습니다",
+                        imageRes = R.drawable.no_season,
+                        modifier = Modifier.weight(1f)
+                    )
                     else -> {
                         TeamTheme(teamId = teamId) {
                             val primaryColor = TeamTheme.colors.primary
 
-                            Text(
-                                text = "총 ${state.totalSongCount}곡",
-                                style = CheerLotTextStyle.M4,
-                                color = GrayScaleColor.Gray400,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
-                            LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                                items(state.results, key = { it.id }) { row ->
-                                    TeamMembersCell(
-                                        row = row,
-                                        primaryColor = primaryColor,
-                                        onClick = { onTapResult(row) }
-                                    )
+                            // SearchTextField가 이미 쓴 높이를 빼고 남은 공간을 이 Column에 정확히
+                            // 할당해야, LazyColumn이 Column의 전체 높이로 측정돼 하단이 잘리는 걸
+                            // 막을 수 있습니다(weight 없는 형제는 남은 공간이 아니라 부모의 전체
+                            // maxHeight로 측정되는 Compose Column의 특성).
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "총 ${state.totalSongCount}곡",
+                                    style = CheerLotTextStyle.M4,
+                                    color = GrayScaleColor.Gray400,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+                                LazyColumn(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                                ) {
+                                    items(state.results, key = { it.id }) { row ->
+                                        TeamMembersCell(
+                                            row = row,
+                                            primaryColor = primaryColor,
+                                            onClick = { onTapResult(row) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -97,8 +124,13 @@ internal fun SearchScreen(
 }
 
 @Composable
-private fun SearchMessage(text: String, imageRes: Int? = null) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+private fun SearchMessage(
+    text: String,
+    imageRes: Int? = null,
+    onRetry: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             if (imageRes != null) {
                 Image(
@@ -116,6 +148,16 @@ private fun SearchMessage(text: String, imageRes: Int? = null) {
                 color = GrayScaleColor.Gray200,
                 textAlign = TextAlign.Center
             )
+            if (onRetry != null) {
+                Text(
+                    text = "다시 시도",
+                    style = CheerLotTextStyle.SB7,
+                    color = GrayScaleColor.Gray400,
+                    modifier = Modifier
+                        .padding(top = 12.dp)
+                        .clickable(onClick = onRetry)
+                )
+            }
         }
     }
 }
