@@ -43,6 +43,9 @@ local.properties
 .env.*
 *.local
 
+# Firebase client configuration
+/app/google-services.json
+
 # Android generated
 captures/
 .externalNativeBuild/
