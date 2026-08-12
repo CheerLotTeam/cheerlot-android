@@ -17,25 +17,26 @@ class FirebaseRemoteConfigService(
             FirebaseRemoteConfigSettings.Builder()
                 .setMinimumFetchIntervalInSeconds(0L)
                 .build()
-        ).awaitCompletion()
+        ).awaitIsSuccessful()
         remoteConfig.setDefaultsAsync(
             mapOf(
                 MINIMUM_VERSION_KEY to DEFAULT_MINIMUM_VERSION,
                 SERVER_CHECK_KEY to false,
                 SERVER_CHECK_MESSAGE_KEY to DEFAULT_SERVER_CHECK_MESSAGE,
             )
-        ).awaitCompletion()
+        ).awaitIsSuccessful()
 
-        // 성공 여부와 관계없이 활성 캐시 또는 앱 기본값을 반환해 앱 진입을 막지 않습니다.
-        remoteConfig.fetchAndActivate().awaitCompletion()
-        return currentConfig()
+        val isFetchSuccessful = remoteConfig.fetchAndActivate().awaitIsSuccessful()
+        // 실패 시 이전 활성값을 재사용하지 않고 앱 기본값으로 정상 진입합니다.
+        return if (isFetchSuccessful) currentConfig() else RemoteAppConfig()
     }
 
-    private suspend fun Task<*>.awaitCompletion() = suspendCancellableCoroutine { continuation ->
-        addOnCompleteListener {
-            if (continuation.isActive) continuation.resume(Unit)
+    private suspend fun Task<*>.awaitIsSuccessful(): Boolean =
+        suspendCancellableCoroutine { continuation ->
+            addOnCompleteListener { task ->
+                if (continuation.isActive) continuation.resume(task.isSuccessful)
+            }
         }
-    }
 
     private fun currentConfig() = RemoteAppConfig(
         minimumVersion = remoteConfig.getString(MINIMUM_VERSION_KEY)

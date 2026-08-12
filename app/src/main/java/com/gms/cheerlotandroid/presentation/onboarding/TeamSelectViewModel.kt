@@ -45,7 +45,14 @@ class TeamSelectViewModel(
         _uiState.update { it.copy(selectedTeamId = null, isSubmitting = false) }
         viewModelScope.launch {
             val currentTeamId = getSelectedTeamUseCase().first()
-            _uiState.update { it.copy(selectedTeamId = currentTeamId) }
+            _uiState.update { state ->
+                // 저장값 조회 중 사용자가 팀을 골랐다면 새 선택을 덮어쓰지 않습니다.
+                if (state.selectedTeamId == null) {
+                    state.copy(selectedTeamId = currentTeamId)
+                } else {
+                    state
+                }
+            }
         }
     }
 
