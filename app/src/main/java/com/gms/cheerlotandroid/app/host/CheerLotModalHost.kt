@@ -105,7 +105,6 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
             ModalBottomSheet(
                 onDismissRequest = presentationState::dismissSheet,
                 sheetState = sheetState,
-                sheetGesturesEnabled = false,
                 dragHandle = null,
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = {
