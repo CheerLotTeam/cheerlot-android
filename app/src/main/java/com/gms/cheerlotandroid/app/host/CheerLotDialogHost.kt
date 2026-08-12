@@ -13,11 +13,20 @@ import com.gms.cheerlotandroid.core.navigation.CheerLotPresentationState
 fun CheerLotDialogHost(presentationState: CheerLotPresentationState) {
     when (val dialog = presentationState.currentDialog) {
         is CheerLotDialog.Confirm -> AlertDialog(
-            onDismissRequest = presentationState::dismissDialog,
+            onDismissRequest = {
+                if (dialog.dismissible) presentationState.dismissDialog()
+            },
             title = { Text(dialog.title) },
             text = { Text(dialog.message) },
             confirmButton = {
-                TextButton(onClick = presentationState::dismissDialog) { Text("확인") }
+                TextButton(
+                    onClick = {
+                        if (dialog.dismissible) presentationState.dismissDialog()
+                        dialog.onConfirm()
+                    }
+                ) {
+                    Text("확인")
+                }
             },
         )
 

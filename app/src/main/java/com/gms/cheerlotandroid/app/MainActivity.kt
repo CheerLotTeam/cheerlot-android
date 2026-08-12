@@ -5,12 +5,14 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 
 class MainActivity : ComponentActivity() {
@@ -36,7 +38,18 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermissionIfNeeded()
         setContent {
             CheerLotTheme {
-                CheerLotApp(appContainer = appContainer)
+                CheerLotApp(
+                    appContainer = appContainer,
+                    onExitApp = ::finishAndRemoveTask,
+                    onOpenStore = {
+                        startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                "https://play.google.com/store/apps/details?id=$packageName".toUri()
+                            )
+                        )
+                    }
+                )
             }
         }
     }

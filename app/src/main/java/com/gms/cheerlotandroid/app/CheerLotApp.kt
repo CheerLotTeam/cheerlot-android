@@ -14,11 +14,17 @@ import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 @Composable
 fun CheerLotApp(
     appContainer: AppContainer,
+    onExitApp: () -> Unit,
+    onOpenStore: () -> Unit,
     presentationState: CheerLotPresentationState = rememberCheerLotPresentationState(),
 ) {
     // 하위 Composable은 LocalAppContainer.current로 앱 전역 의존성에 접근합니다.
     CompositionLocalProvider(LocalAppContainer provides appContainer) {
-        AppFlowRoot(presentationState = presentationState)
+        AppFlowRoot(
+            presentationState = presentationState,
+            onExitApp = onExitApp,
+            onOpenStore = onOpenStore,
+        )
     }
 }
 
