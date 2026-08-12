@@ -73,6 +73,7 @@ internal fun LineupPlaybackScreen(
     // 닫기 버튼, 시스템 back, Sheet dismiss 등 어떤 경로로 화면을 떠나든 재생을 완전히 끊습니다.
     // iOS LineupPlaybackView의 onClose/onDisappear에서 stop()을 호출하는 것과 같은 목적입니다.
     DisposableEffect(viewModel) {
+        viewModel.trackPresented()
         onDispose(viewModel::stopPlayback)
     }
 

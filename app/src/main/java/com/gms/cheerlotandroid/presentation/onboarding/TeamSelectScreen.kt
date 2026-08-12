@@ -49,6 +49,7 @@ fun TeamSelectScreen(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
                     updateSelectedTeamUseCase = appContainer.updateSelectedTeamUseCase,
                     audioPlayer = appContainer.audioPlayer,
+                    analyticsService = appContainer.analyticsService,
                     mode = mode
                 )
             }

@@ -7,6 +7,10 @@ import com.gms.cheerlotandroid.domain.model.team.LineupGameInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamGameInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsEvent
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsService
+import com.gms.cheerlotandroid.domain.service.analytics.PlaySource
+import com.gms.cheerlotandroid.domain.service.analytics.PlayViewType
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
@@ -30,7 +34,8 @@ internal class LineupPlaybackViewModel(
     private val getLineupUseCase: GetLineupUseCase,
     private val getLineupGameInfoUseCase: GetLineupGameInfoUseCase,
     private val getTeamUseCase: GetTeamUseCase,
-    private val audioPlayer: AudioPlayer
+    private val audioPlayer: AudioPlayer,
+    private val analyticsService: AnalyticsService,
 ) : ViewModel() {
 
     private data class ScreenInfo(
@@ -81,7 +86,30 @@ internal class LineupPlaybackViewModel(
     // 재생을 완전히 끊습니다. 라인업 재생은 미니플레이어로 이어지지 않는 Shorts 방식이라,
     // 화면만 닫는 BasePlayback(PlaybackViewModel.close)과 달리 stop으로 큐 자체를 비웁니다.
     fun stopPlayback() {
+        val state = audioPlayer.state.value
+        analyticsService.track(
+            AnalyticsEvent.PlayViewDismissed(
+                source = PlaySource.LINEUP,
+                viewType = PlayViewType.LINEUP_PLAYBACK,
+                isPlaying = state.isPlaying,
+                isGameDay = state.isGameDay,
+                playerId = state.currentPlayerId,
+            )
+        )
         audioPlayer.stop()
+    }
+
+    fun trackPresented() {
+        val state = audioPlayer.state.value
+        analyticsService.track(
+            AnalyticsEvent.PlayViewPresented(
+                source = PlaySource.LINEUP,
+                viewType = PlayViewType.LINEUP_PLAYBACK,
+                isPlaying = state.isPlaying,
+                isGameDay = state.isGameDay,
+                playerId = state.currentPlayerId,
+            )
+        )
     }
 
     // HorizontalPager는 빠른 플링으로 여러 페이지를 한 번에 건너뛸 수 있어, playNext/playPrevious(±1) 대신
