@@ -36,7 +36,6 @@ import com.gms.cheerlotandroid.domain.usecase.team.GetAllTeamsUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamGameScheduleUseCase
-import com.gms.cheerlotandroid.domain.usecase.team.HasSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.UpdateSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.IsGameDayUseCase
 
@@ -150,10 +149,6 @@ class AppContainer(
 
     val updateSelectedTeamUseCase: UpdateSelectedTeamUseCase by lazy {
         UpdateSelectedTeamUseCase(teamSelectionRepository = teamSelectionRepository)
-    }
-
-    val hasSelectedTeamUseCase: HasSelectedTeamUseCase by lazy {
-        HasSelectedTeamUseCase(teamSelectionRepository = teamSelectionRepository)
     }
 
     val playLineupSongsUseCase: PlayLineupSongsUseCase by lazy {

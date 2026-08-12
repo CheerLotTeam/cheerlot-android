@@ -27,8 +27,9 @@ class CheerLotViewModelFactory(
         return when {
             modelClass.isAssignableFrom(AppFlowViewModel::class.java) -> {
                 AppFlowViewModel(
-                    hasSelectedTeamUseCase = appContainer.hasSelectedTeamUseCase,
+                    getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
                     remoteConfigService = appContainer.remoteConfigService,
+                    analyticsService = appContainer.analyticsService,
                     currentVersion = com.gms.cheerlotandroid.BuildConfig.VERSION_NAME,
                 ) as T
             }

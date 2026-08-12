@@ -2,8 +2,10 @@ package com.gms.cheerlotandroid.presentation.appflow
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsService
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsUserProperty
 import com.gms.cheerlotandroid.domain.service.remoteconfig.RemoteConfigService
-import com.gms.cheerlotandroid.domain.usecase.team.HasSelectedTeamUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,8 +13,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class AppFlowViewModel(
-    private val hasSelectedTeamUseCase: HasSelectedTeamUseCase,
+    private val getSelectedTeamUseCase: GetSelectedTeamUseCase,
     private val remoteConfigService: RemoteConfigService,
+    private val analyticsService: AnalyticsService,
     private val currentVersion: String,
 ) : ViewModel() {
     private val _state = MutableStateFlow<AppFlowState>(AppFlowState.Splash)
@@ -56,7 +59,12 @@ class AppFlowViewModel(
         // Remote Config 확인과 Splash 애니메이션 중 늦게 끝나는 쪽까지 기다린 뒤 화면을 전환합니다.
         if (!isSplashFinished || !isConfigChecked) return
         viewModelScope.launch {
-            _state.value = if (hasSelectedTeamUseCase().first()) {
+            val selectedTeamId = getSelectedTeamUseCase().first()
+            if (selectedTeamId != null) {
+                // 업데이트 전에 이미 팀을 선택한 사용자도 Amplitude 사용자 속성을 복원합니다.
+                analyticsService.setUserProperty(AnalyticsUserProperty.TEAM_ID, selectedTeamId.value)
+            }
+            _state.value = if (selectedTeamId != null) {
                 AppFlowState.Main
             } else {
                 AppFlowState.Onboarding
