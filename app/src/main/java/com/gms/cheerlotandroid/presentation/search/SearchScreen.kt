@@ -17,24 +17,56 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.R
+import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.component.CustomToastMessage
 import com.gms.cheerlotandroid.design.component.CustomTopAppBarLargeTitle
 import com.gms.cheerlotandroid.design.component.TeamMembersCell
 import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
+import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.search.component.SearchTextField
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersRow
 
 @Composable
 internal fun SearchScreen(
+    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val viewModel: SearchViewModel =
+        viewModel(factory = LocalAppContainer.current.viewModelFactory)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    SearchContent(
+        state = uiState,
+        onQueryChange = viewModel::onQueryChange,
+        // iOS SearchView와 동일하게 결과를 탭하면 재생 시작과 동시에 전체화면 재생화면을 엽니다.
+        onTapResult = { row ->
+            viewModel.onTapResult(row)
+            val teamId = uiState.teamId
+            val song = row.song
+            if (teamId != null && song != null) {
+                onOpenBasePlayback(teamId, song.id, row.playerName)
+            }
+        },
+        onRetry = viewModel::retry,
+        onDismissToast = viewModel::dismissToast,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun SearchContent(
     state: SearchUiState,
     onQueryChange: (String) -> Unit,
     onTapResult: (TeamMembersRow) -> Unit,
