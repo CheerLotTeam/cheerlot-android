@@ -27,7 +27,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.CheerLot"
+            android:theme="@style/Theme.CheerLot.Starting"
             android:windowSoftInputMode="adjustResize" />
 
         <!--
