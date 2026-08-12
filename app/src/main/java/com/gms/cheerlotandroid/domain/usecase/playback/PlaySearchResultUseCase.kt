@@ -10,7 +10,12 @@ import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersRow
 class PlaySearchResultUseCase(
     private val audioPlayer: AudioPlayer
 ) {
-    fun play(selectedRow: TeamMembersRow, displayedRows: List<TeamMembersRow>, teamId: TeamId) {
+    fun play(
+        selectedRow: TeamMembersRow,
+        displayedRows: List<TeamMembersRow>,
+        teamId: TeamId,
+        isGameDay: Boolean,
+    ) {
         val playableRows = displayedRows.filter { it.hasSong && it.playerId == selectedRow.playerId }
         if (playableRows.isEmpty()) return
         val startAt = playableRows.indexOf(selectedRow).takeIf { it >= 0 } ?: 0
@@ -20,7 +25,9 @@ class PlaySearchResultUseCase(
             playerNames = playableRows.map { it.playerName },
             startAt = startAt,
             teamId = teamId,
-            mode = PlaybackMode.SEARCH
+            mode = PlaybackMode.SEARCH,
+            playerIds = playableRows.map { it.playerId.value },
+            isGameDay = isGameDay,
         )
     }
 }
