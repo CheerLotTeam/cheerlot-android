@@ -97,6 +97,7 @@ android {
 
     buildTypes {
         debug {
+            // 개발 크래시가 운영 이슈에 섞이지 않도록 기본 비활성화하고, 최초 연동 검증 때만 로컬에서 켭니다.
             resValue(
                 "bool",
                 "firebase_crashlytics_collection_enabled",
@@ -104,6 +105,7 @@ android {
             )
         }
         release {
+            // Release는 앱 코드 호출 없이 Manifest 초기값만으로 Crashlytics 자동 수집을 활성화합니다.
             resValue("bool", "firebase_crashlytics_collection_enabled", "true")
             optimization {
                 enable = false

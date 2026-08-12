@@ -11,6 +11,7 @@ class FirebaseRemoteConfigService(
     private val remoteConfig: FirebaseRemoteConfig = FirebaseRemoteConfig.getInstance(),
 ) : RemoteConfigService {
     init {
+        // 앱 시작마다 서버 fetch를 허용합니다.
         remoteConfig.setConfigSettingsAsync(
             FirebaseRemoteConfigSettings.Builder()
                 .setMinimumFetchIntervalInSeconds(0L)
@@ -28,6 +29,7 @@ class FirebaseRemoteConfigService(
     override suspend fun fetch(): RemoteAppConfig {
         return suspendCancellableCoroutine { continuation ->
             remoteConfig.fetchAndActivate().addOnCompleteListener {
+                // 성공 여부와 관계없이 활성 캐시 또는 앱 기본값을 반환해 앱 진입을 막지 않습니다.
                 if (continuation.isActive) continuation.resume(currentConfig())
             }
         }

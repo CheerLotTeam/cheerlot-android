@@ -180,6 +180,7 @@ class LineupViewModel(
                 }
             }
         }
+        // app_open의 is_game_day를 확정하기 위해 라인업의 최초 데이터 로드 완료 시 한 번만 기록합니다.
         .onEach { state ->
             if (!hasTrackedAppOpen && !state.isLoading && state.teamId != null) {
                 hasTrackedAppOpen = true

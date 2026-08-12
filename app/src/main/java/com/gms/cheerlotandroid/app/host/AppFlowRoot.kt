@@ -27,6 +27,7 @@ fun AppFlowRoot(
     val viewModel: AppFlowViewModel = viewModel(factory = LocalAppContainer.current.viewModelFactory)
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    // ViewModel의 진입 차단 상태를 공통 Dialog 상태로 한 번만 변환합니다.
     LaunchedEffect(state) {
         when (val currentState = state) {
             is AppFlowState.ServerChecking -> {

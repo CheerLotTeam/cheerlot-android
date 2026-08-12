@@ -290,6 +290,7 @@ class AudioPlaybackPlayer(
                 currentPositionMs = 0L
             )
         }
+        // 클릭 시점이 아니라 MediaItem이 실제로 재생기에 올라간 시점만 재생 시작으로 집계합니다.
         analyticsService.track(
             AnalyticsEvent.CheerPlayStarted(
                 source = _state.value.source,
@@ -311,6 +312,7 @@ class AudioPlaybackPlayer(
         // 진행합니다(마지막 곡+큐 1개면 같은 곡을 재시작 = 무한 반복, 그 외엔 다음곡/처음으로 wrap).
         if (state.playbackMode == PlaybackMode.LINEUP) {
             currentIndex = if (currentIndex + 1 < queue.size) currentIndex + 1 else 0
+            // 곡 종료에 의한 이동만 auto_next이며, 버튼·Pager 이동은 user_tap으로 기록합니다.
             pendingTrigger = PlayTrigger.AUTO_NEXT
             playCurrentSong()
             return

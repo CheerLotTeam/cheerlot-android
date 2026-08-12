@@ -53,6 +53,7 @@ class AppFlowViewModel(
     }
 
     private fun movePastSplashIfReady() {
+        // Remote Config 확인과 Splash 애니메이션 중 늦게 끝나는 쪽까지 기다린 뒤 화면을 전환합니다.
         if (!isSplashFinished || !isConfigChecked) return
         viewModelScope.launch {
             _state.value = if (hasSelectedTeamUseCase().first()) {
@@ -64,6 +65,7 @@ class AppFlowViewModel(
     }
 
     private fun isUpdateRequired(current: String, minimum: String): Boolean {
+        // 부족한 자리는 0으로 보아 1.0과 1.0.0을 같은 버전으로 비교합니다.
         val currentParts = current.toVersionParts()
         val minimumParts = minimum.toVersionParts()
         val size = maxOf(currentParts.size, minimumParts.size)
