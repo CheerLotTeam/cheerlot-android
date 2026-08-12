@@ -139,7 +139,7 @@ private fun LineupPlaybackContent(
                         .padding(innerPadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = colors.primaryColor)
+                    CircularProgressIndicator()
                 }
             } else {
                 LineupPlaybackPager(
