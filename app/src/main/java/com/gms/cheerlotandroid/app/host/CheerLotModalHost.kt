@@ -90,7 +90,7 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
             }
         }
 
-        is CheerLotSheet.TeamChange -> {
+        CheerLotSheet.TeamChange -> {
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             val scope = rememberCoroutineScope()
             val dismissWithAnimation: () -> Unit = {

@@ -28,15 +28,25 @@ class TeamSelectViewModel(
     val uiState: StateFlow<TeamSelectUiState> = _uiState.asStateFlow()
 
     init {
-        // onboarding이면 아직 선택된 팀이 없어 null, change면 현재 선택된 팀이 나옴
-        viewModelScope.launch {
-            val currentTeamId = getSelectedTeamUseCase().first()
-            _uiState.update { it.copy(selectedTeamId = currentTeamId) }
+        if (mode == TeamSelectMode.ONBOARDING) {
+            viewModelScope.launch {
+                val currentTeamId = getSelectedTeamUseCase().first()
+                _uiState.update { it.copy(selectedTeamId = currentTeamId) }
+            }
         }
     }
 
     fun select(teamId: TeamId) {
         _uiState.update { it.copy(selectedTeamId = teamId) }
+    }
+
+    // 팀 변경 Sheet를 열 때 저장하지 않은 이전 선택 상태를 현재 팀으로 되돌립니다.
+    fun prepareChange() {
+        _uiState.update { it.copy(selectedTeamId = null, isSubmitting = false) }
+        viewModelScope.launch {
+            val currentTeamId = getSelectedTeamUseCase().first()
+            _uiState.update { it.copy(selectedTeamId = currentTeamId) }
+        }
     }
 
     fun complete(onComplete: () -> Unit) {
