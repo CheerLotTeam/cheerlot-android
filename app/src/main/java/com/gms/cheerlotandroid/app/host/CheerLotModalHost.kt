@@ -135,6 +135,7 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
     when (val fullScreen = presentationState.currentFullScreen) {
         is CheerLotFullScreen.BasePlayback -> {
             PlaybackScreen(
+                teamId = fullScreen.teamId,
                 onClose = presentationState::dismissFullScreen
             )
         }

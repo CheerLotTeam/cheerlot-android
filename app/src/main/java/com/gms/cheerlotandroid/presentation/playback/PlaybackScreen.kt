@@ -59,7 +59,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
+import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
+import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.playback.component.PlaybackBackground
 import com.gms.cheerlotandroid.presentation.playback.component.PlaybackSeekBar
 import kotlin.math.roundToInt
@@ -67,6 +69,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 internal fun PlaybackScreen(
+    teamId: TeamId,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -81,22 +84,26 @@ internal fun PlaybackScreen(
 
     BackHandler(onBack = closePlayback)
 
-    PlaybackContent(
-        state = uiState,
-        onClose = closePlayback,
-        onTogglePlayback = viewModel::togglePlayback,
-        onSeek = viewModel::seek,
-        onPlayNext = viewModel::playNext,
-        onPlayPrevious = viewModel::playPrevious,
-        onToggleShuffle = viewModel::toggleShuffle,
-        onToggleRepeatOne = viewModel::toggleRepeatOne,
-        modifier = modifier
-    )
+    TeamTheme(teamId = teamId) {
+        PlaybackContent(
+            state = uiState,
+            primaryColor = TeamTheme.colors.primary,
+            onClose = closePlayback,
+            onTogglePlayback = viewModel::togglePlayback,
+            onSeek = viewModel::seek,
+            onPlayNext = viewModel::playNext,
+            onPlayPrevious = viewModel::playPrevious,
+            onToggleShuffle = viewModel::toggleShuffle,
+            onToggleRepeatOne = viewModel::toggleRepeatOne,
+            modifier = modifier
+        )
+    }
 }
 
 @Composable
 private fun PlaybackContent(
     state: PlaybackUiState,
+    primaryColor: Color,
     onClose: () -> Unit,
     onTogglePlayback: () -> Unit,
     onSeek: (Long) -> Unit,
@@ -115,7 +122,7 @@ private fun PlaybackContent(
             .fillMaxSize()
             .offset { IntOffset(0, dragOffset.value.roundToInt()) }
     ) {
-        PlaybackBackground(state.primaryColor)
+        PlaybackBackground(primaryColor)
         Box(
             modifier = Modifier
                 .fillMaxSize()
