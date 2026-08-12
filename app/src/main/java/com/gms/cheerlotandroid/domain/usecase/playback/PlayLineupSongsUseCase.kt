@@ -13,14 +13,18 @@ class PlayLineupSongsUseCase(
         songs: List<CheerSongInfo>,
         playerNames: List<String>,
         startAt: Int,
-        teamId: TeamId
+        teamId: TeamId,
+        playerIds: List<String> = emptyList(),
+        isGameDay: Boolean = false,
     ) {
         audioPlayer.playQueue(
             songs = songs,
             playerNames = playerNames,
             startAt = startAt,
             teamId = teamId,
-            mode = PlaybackMode.LINEUP
+            mode = PlaybackMode.LINEUP,
+            playerIds = playerIds,
+            isGameDay = isGameDay,
         )
     }
 }

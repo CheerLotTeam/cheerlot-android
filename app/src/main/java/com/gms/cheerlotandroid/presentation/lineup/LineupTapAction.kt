@@ -12,7 +12,9 @@ sealed interface LineupTapAction {
         val member: PlayerInfo,
         val startIndex: Int,
         val queueSongs: List<CheerSongInfo>,
-        val queuePlayerNames: List<String>
+        val queuePlayerNames: List<String>,
+        val queuePlayerIds: List<String>,
+        val isGameDay: Boolean,
     ) : LineupTapAction
 
     // 응원가 정확히 1개 → 바로 재생

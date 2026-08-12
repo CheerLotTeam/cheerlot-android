@@ -2,10 +2,14 @@ package com.gms.cheerlotandroid.domain.model.playback
 
 import com.gms.cheerlotandroid.domain.model.cheersong.CheerSongInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
+import com.gms.cheerlotandroid.domain.service.analytics.PlaySource
 
 data class PlaybackState(
     val nowPlaying: CheerSongInfo? = null,
     val currentPlayerName: String? = null,
+    val currentPlayerId: String = "",
+    val source: PlaySource = PlaySource.TEAM_MEMBERS,
+    val isGameDay: Boolean = false,
     val teamId: TeamId? = null,
     val isPlaying: Boolean = false,
     val currentPositionMs: Long = 0L,

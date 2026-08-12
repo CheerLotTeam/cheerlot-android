@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gms.cheerlotandroid.core.di.LocalAppContainer
@@ -62,7 +63,9 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
                                     songs = sheet.queueSongs,
                                     playerNames = sheet.queuePlayerNames,
                                     startAt = targetIndex,
-                                    teamId = sheet.member.teamId
+                                    teamId = sheet.member.teamId,
+                                    playerIds = sheet.queuePlayerIds,
+                                    isGameDay = sheet.isGameDay,
                                 )
                                 scope.launch {
                                     sheetState.hide()
@@ -157,6 +160,10 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
             val uiState by viewModel.uiState.collectAsState()
             val closePlayback = {
                 viewModel.close(onClosed = presentationState::dismissFullScreen)
+            }
+
+            LaunchedEffect(viewModel) {
+                viewModel.trackPresented()
             }
 
             BackHandler(onBack = closePlayback)

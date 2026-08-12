@@ -14,6 +14,8 @@ sealed interface CheerLotSheet {
         val startIndex: Int,
         val queueSongs: List<CheerSongInfo>,
         val queuePlayerNames: List<String>,
+        val queuePlayerIds: List<String>,
+        val isGameDay: Boolean,
     ) : CheerLotSheet
 
     data class LineupChange(

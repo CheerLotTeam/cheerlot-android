@@ -12,6 +12,10 @@ import com.gms.cheerlotandroid.domain.usecase.playback.PlayLineupSongsUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamGameScheduleUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamUseCase
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsEvent
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsService
+import com.gms.cheerlotandroid.domain.service.analytics.AppEntryPoint
+import com.gms.cheerlotandroid.domain.model.team.GameStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +33,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
@@ -44,6 +49,7 @@ class LineupViewModel(
     private val getTeamGameScheduleUseCase: GetTeamGameScheduleUseCase,
     private val getTeamUseCase: GetTeamUseCase,
     private val playLineupSongsUseCase: PlayLineupSongsUseCase,
+    private val analyticsService: AnalyticsService,
     private val currentDateProvider: () -> LocalDate = { LocalDate.now(seoulZoneId) }
 ) : ViewModel() {
 
@@ -67,6 +73,7 @@ class LineupViewModel(
     private val refreshRequests = MutableSharedFlow<TeamId>(extraBufferCapacity = 1)
     private var hasHandledTeam = false
     private var lastTeamId: TeamId? = null
+    private var hasTrackedAppOpen = false
 
     val uiState: StateFlow<LineupUiState> = getSelectedTeamUseCase()
         .distinctUntilChanged()
@@ -173,6 +180,19 @@ class LineupViewModel(
                 }
             }
         }
+        .onEach { state ->
+            if (!hasTrackedAppOpen && !state.isLoading && state.teamId != null) {
+                hasTrackedAppOpen = true
+                val status = state.gameInfo?.gameInfo?.status
+                analyticsService.track(
+                    AnalyticsEvent.AppOpen(
+                        entryPoint = AppEntryPoint.APP,
+                        isGameDay = status == GameStatus.PLAYING_TODAY ||
+                            status == GameStatus.LINEUP_PENDING,
+                    )
+                )
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -207,7 +227,12 @@ class LineupViewModel(
                     member = player,
                     startIndex = flatSongIndex(player.cheerSongs.first()),
                     queueSongs = songs,
-                    queuePlayerNames = playerNames
+                    queuePlayerNames = playerNames,
+                    queuePlayerIds = uiState.value.players.flatMap { lineupPlayer ->
+                        lineupPlayer.cheerSongs.map { lineupPlayer.id.value }
+                    },
+                    isGameDay = uiState.value.gameStatus == GameStatus.PLAYING_TODAY ||
+                        uiState.value.gameStatus == GameStatus.LINEUP_PENDING,
                 )
             }
         }
@@ -217,7 +242,17 @@ class LineupViewModel(
         val teamId = uiState.value.teamId ?: return
         val (songs, playerNames) = flatSongsAndNames()
         if (songs.isEmpty()) return
-        playLineupSongsUseCase(songs = songs, playerNames = playerNames, startAt = startAt, teamId = teamId)
+        playLineupSongsUseCase(
+            songs = songs,
+            playerNames = playerNames,
+            startAt = startAt,
+            teamId = teamId,
+            playerIds = uiState.value.players.flatMap { player ->
+                player.cheerSongs.map { player.id.value }
+            },
+            isGameDay = uiState.value.gameStatus == GameStatus.PLAYING_TODAY ||
+                uiState.value.gameStatus == GameStatus.LINEUP_PENDING,
+        )
     }
 
     // 모든 선수의 응원가를 타순대로 이어붙인 (곡, 선수명) 리스트입니다. 선수명은 곡 개수만큼 반복됩니다.

@@ -68,7 +68,9 @@ fun CheerLotNavHost(
                             member = action.member,
                             startIndex = action.startIndex,
                             queueSongs = action.queueSongs,
-                            queuePlayerNames = action.queuePlayerNames
+                            queuePlayerNames = action.queuePlayerNames,
+                            queuePlayerIds = action.queuePlayerIds,
+                            isGameDay = action.isGameDay,
                         )
                     )
                 },
