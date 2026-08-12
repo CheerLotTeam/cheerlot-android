@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -55,7 +56,7 @@ internal fun MiniPlayer(
         modifier = modifier
             .fillMaxWidth()
             .height(68.dp)
-            .background(GrayScaleColor.GrayWhite)
+            .background(Color.White)
             .clickable(onClick = onClick)
             .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically

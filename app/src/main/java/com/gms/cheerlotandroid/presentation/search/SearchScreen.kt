@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,7 +77,7 @@ private fun SearchContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = GrayScaleColor.GrayWhite,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = { CustomTopAppBarLargeTitle(title = "검색") },
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
     ) { padding ->

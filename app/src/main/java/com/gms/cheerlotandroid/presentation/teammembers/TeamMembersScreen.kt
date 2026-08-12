@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -65,7 +66,7 @@ private fun TeamMembersContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = GrayScaleColor.GrayWhite,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CustomTopAppBarTitleWithProfile(title = "전체 선수", onProfileClick = onOpenSettings)
         },
