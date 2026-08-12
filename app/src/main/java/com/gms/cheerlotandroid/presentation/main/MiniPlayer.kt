@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
-import com.gms.cheerlotandroid.design.color.team.TeamColor
+import com.gms.cheerlotandroid.design.resource.team.TeamResource
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.team.TeamId
@@ -97,8 +97,7 @@ internal fun MiniPlayer(
     }
 }
 
-// iOS MainTabView가 미니플레이어에 asset.coverImage(팀별 커버, 알림/잠금화면과 동일한 이미지)를
-// 쓰는 것과 동일하게, team_cover_{prefix} 리소스를 그대로 재사용합니다.
+// iOS MainTabView의 팀별 커버와 동일한 이미지를 축소한 team_cover_thumb 리소스를 사용합니다.
 @Composable
 private fun MiniPlayerCover(
     teamId: TeamId?,
@@ -106,7 +105,7 @@ private fun MiniPlayerCover(
 ) {
     // 원본 커버(594x594)를 40dp로 직접 축소하면 그라데이션에 디더링 노이즈가 생겨서,
     // 미니플레이어 전용으로 미리 축소해둔 썸네일(256x256)을 씁니다.
-    val coverResId = teamId?.let(TeamColor::coverThumbnailRes)
+    val coverResId = teamId?.let(TeamResource::coverThumbnailRes)
 
     Box(
         modifier = modifier

@@ -10,7 +10,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.gms.cheerlotandroid.design.color.team.TeamColor
+import com.gms.cheerlotandroid.design.resource.team.TeamResource
 import com.gms.cheerlotandroid.domain.model.cheersong.CheerSongInfo
 import com.gms.cheerlotandroid.domain.model.playback.PlaybackMode
 import com.gms.cheerlotandroid.domain.model.playback.PlaybackState
@@ -409,7 +409,7 @@ class AudioPlaybackPlayer(
     // 알림/잠금화면도 594x594 원본을 그대로 쓰면 시스템 UI가 훨씬 작은 크기로 축소하면서 디더링
     // 노이즈가 생겨서(MiniPlayer와 동일한 문제), 미리 축소해둔 256x256 썸네일을 씁니다.
     private fun coverArtUriFor(teamId: TeamId): Uri? {
-        val resId = TeamColor.coverThumbnailRes(teamId) ?: return null
+        val resId = TeamResource.coverThumbnailRes(teamId) ?: return null
         return Uri.parse("android.resource://${appContext.packageName}/$resId")
     }
 

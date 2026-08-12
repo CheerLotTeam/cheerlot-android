@@ -31,6 +31,7 @@ import com.gms.cheerlotandroid.design.color.team.TeamColor
 import com.gms.cheerlotandroid.design.component.CustomToastMessage
 import com.gms.cheerlotandroid.design.component.CustomTopAppBarBackWithTitle
 import com.gms.cheerlotandroid.design.component.TeamCard
+import com.gms.cheerlotandroid.design.resource.team.TeamResource
 import com.gms.cheerlotandroid.design.theme.TeamTheme
 import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.settings.AppIconMode
@@ -146,7 +147,8 @@ private fun AppIconSection(
             )
             AppIconOption(
                 label = "팀",
-                iconRes = currentTeamId?.let(::teamIconRes) ?: R.mipmap.ic_launcher,
+                iconRes = currentTeamId?.let(TeamResource::launcherIconRes)
+                    ?: R.mipmap.ic_launcher,
                 selected = isTeamSelected,
                 accentColor = accentColor,
                 onClick = { onSelectMode(AppIconMode.TEAM) }
@@ -191,21 +193,5 @@ private fun AppIconOption(
             color = if (selected) accentColor else GrayScaleColor.Gray300,
             modifier = Modifier.padding(top = 4.dp)
         )
-    }
-}
-
-private fun teamIconRes(teamId: TeamId): Int {
-    return when (TeamColor.assetPrefixFor(teamId)) {
-        "hh" -> R.mipmap.ic_launcher_hanwha
-        "kia" -> R.mipmap.ic_launcher_kia
-        "kt" -> R.mipmap.ic_launcher_kt
-        "lg" -> R.mipmap.ic_launcher_lg
-        "lt" -> R.mipmap.ic_launcher_lotte
-        "nc" -> R.mipmap.ic_launcher_nc
-        "ds" -> R.mipmap.ic_launcher_doosan
-        "ssg" -> R.mipmap.ic_launcher_ssg
-        "ss" -> R.mipmap.ic_launcher_samsung
-        "kw" -> R.mipmap.ic_launcher_kiwoom
-        else -> R.mipmap.ic_launcher
     }
 }
