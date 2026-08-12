@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.preview.DevicePreviews
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
@@ -23,7 +24,46 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.cheersongmenu.component.CheerSongMenuCell
 
 @Composable
-internal fun CheerSongMenuSheet(
+internal fun CheerSongMenuScreen(
+    memberName: String,
+    teamId: TeamId,
+    cheerSongs: List<CheerSongInfo>,
+    queueSongs: List<CheerSongInfo>,
+    queuePlayerNames: List<String>,
+    queuePlayerIds: List<String>,
+    startIndex: Int,
+    isGameDay: Boolean,
+    onPlaybackStarted: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val playLineupSongsUseCase = LocalAppContainer.current.playLineupSongsUseCase
+
+    TeamTheme(teamId = teamId) {
+        CheerSongMenuContent(
+            memberName = memberName,
+            cheerSongs = cheerSongs,
+            onSelectCheerSong = { cheerSong ->
+                val songIndex = cheerSongs.indexOfFirst { it.id == cheerSong.id }
+                if (songIndex >= 0) {
+                    val targetIndex = startIndex + songIndex
+                    playLineupSongsUseCase(
+                        songs = queueSongs,
+                        playerNames = queuePlayerNames,
+                        startAt = targetIndex,
+                        teamId = teamId,
+                        playerIds = queuePlayerIds,
+                        isGameDay = isGameDay,
+                    )
+                    onPlaybackStarted(targetIndex)
+                }
+            },
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+private fun CheerSongMenuContent(
     memberName: String,
     cheerSongs: List<CheerSongInfo>,
     onSelectCheerSong: (CheerSongInfo) -> Unit,
@@ -59,10 +99,10 @@ internal fun CheerSongMenuSheet(
 @DevicePreviews
 @Preview(showBackground = true, name = "Two Cheer Songs")
 @Composable
-private fun CheerSongMenuSheetPreview() {
+private fun CheerSongMenuContentPreview() {
     CheerLotTheme {
         TeamTheme(teamId = TeamId("LOTTE")) {
-            CheerSongMenuSheet(
+            CheerSongMenuContent(
                 memberName = "전준우",
                 cheerSongs = previewCheerSongs,
                 onSelectCheerSong = {}
@@ -73,10 +113,10 @@ private fun CheerSongMenuSheetPreview() {
 
 @Preview(showBackground = true, name = "Three Cheer Songs")
 @Composable
-private fun CheerSongMenuSheetThreeSongsPreview() {
+private fun CheerSongMenuContentThreeSongsPreview() {
     CheerLotTheme {
         TeamTheme(teamId = TeamId("LOTTE")) {
-            CheerSongMenuSheet(
+            CheerSongMenuContent(
                 memberName = "전준우",
                 cheerSongs = previewCheerSongs + previewCheerSongs.first().copy(
                     id = "3",
