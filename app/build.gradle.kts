@@ -12,6 +12,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.room)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 // local.properties는 git 추적에서 제외되므로, 서버 주소처럼 커밋하면 안 되는 값을 이 파일에서 읽습니다.
@@ -86,10 +88,23 @@ android {
             "API_BASE_URL",
             "\"${localProperties.getProperty("API_BASE_URL", "")}\"",
         )
+        buildConfigField(
+            "String",
+            "AMPLITUDE_KEY",
+            "\"${localProperties.getProperty("AMPLITUDE_KEY", "")}\"",
+        )
     }
 
     buildTypes {
+        debug {
+            resValue(
+                "bool",
+                "firebase_crashlytics_collection_enabled",
+                localProperties.getProperty("CRASHLYTICS_DEBUG_ENABLED", "false"),
+            )
+        }
         release {
+            resValue("bool", "firebase_crashlytics_collection_enabled", "true")
             optimization {
                 enable = false
             }
@@ -102,6 +117,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
 }
 
@@ -127,6 +143,7 @@ room {
 }
 
 dependencies {
+    implementation(platform(libs.firebase.bom))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
@@ -152,6 +169,9 @@ dependencies {
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.media3.session)
     implementation(libs.lottie.compose)
+    implementation(libs.firebase.config)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.amplitude.analytics)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
