@@ -134,7 +134,6 @@ private fun LineupContent(
                     ) {
                         if (state.isLoading) {
                             CircularProgressIndicator(
-                                color = TeamTheme.colors.primary,
                                 modifier = Modifier.align(Alignment.Center)
                             )
                         } else {

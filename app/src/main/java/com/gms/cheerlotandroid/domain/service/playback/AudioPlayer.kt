@@ -21,7 +21,9 @@ interface AudioPlayer {
         playerNames: List<String>,
         startAt: Int = 0,
         teamId: TeamId?,
-        mode: PlaybackMode
+        mode: PlaybackMode,
+        playerIds: List<String> = emptyList(),
+        isGameDay: Boolean = false,
     )
 
     // 큐 안의 임의 인덱스로 바로 이동합니다. 라인업 재생 화면의 카드 스와이프처럼, 한 번에 여러 곡을

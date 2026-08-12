@@ -4,7 +4,9 @@ package com.gms.cheerlotandroid.core.navigation
 sealed interface CheerLotDialog {
     data class Confirm(
         val title: String,
-        val message: String
+        val message: String,
+        val onConfirm: () -> Unit = {},
+        val dismissible: Boolean = true,
     ) : CheerLotDialog
 
     data class Error(

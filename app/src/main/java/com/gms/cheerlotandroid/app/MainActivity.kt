@@ -5,12 +5,15 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.gms.cheerlotandroid.design.theme.CheerLotTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,6 +29,8 @@ class MainActivity : ComponentActivity() {
     ) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Android 시스템 Splash는 배경만 짧게 표시하고, 이후 Compose Lottie Splash로 이어집니다.
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(
@@ -36,7 +41,18 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermissionIfNeeded()
         setContent {
             CheerLotTheme {
-                CheerLotApp(appContainer = appContainer)
+                CheerLotApp(
+                    appContainer = appContainer,
+                    onExitApp = ::finishAndRemoveTask,
+                    onOpenStore = {
+                        startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                "https://play.google.com/store/apps/details?id=$packageName".toUri()
+                            )
+                        )
+                    }
+                )
             }
         }
     }

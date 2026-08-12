@@ -4,11 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.component.CustomTopAppBarBackWithTitle
 import com.gms.cheerlotandroid.presentation.settings.component.SettingsMenuCard
 import com.gms.cheerlotandroid.presentation.settings.component.SettingsSection
@@ -24,7 +24,7 @@ internal fun ServiceInfoScreen(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = GrayScaleColor.GrayWhite,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CustomTopAppBarBackWithTitle(title = "서비스 소개", onBack = onBack)
         }

@@ -3,7 +3,7 @@ package com.gms.cheerlotandroid.core.icon
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
-import com.gms.cheerlotandroid.design.color.team.TeamColor
+import com.gms.cheerlotandroid.design.resource.team.TeamResource
 import com.gms.cheerlotandroid.domain.model.settings.AppIconMode
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 
@@ -78,19 +78,7 @@ class AppIconSwitcher(private val context: Context) {
         )
 
         private fun aliasClassNameFor(teamId: TeamId): String? {
-            val suffix = when (TeamColor.assetPrefixFor(teamId)) {
-                "hh" -> "HanwhaAlias"
-                "kia" -> "KiaAlias"
-                "kt" -> "KtAlias"
-                "lg" -> "LgAlias"
-                "lt" -> "LotteAlias"
-                "nc" -> "NcAlias"
-                "ds" -> "DoosanAlias"
-                "ssg" -> "SsgAlias"
-                "ss" -> "SamsungAlias"
-                "kw" -> "KiwoomAlias"
-                else -> return null
-            }
+            val suffix = TeamResource.appIconAliasSuffix(teamId) ?: return null
             return "$ALIAS_PACKAGE_PREFIX$suffix"
         }
     }

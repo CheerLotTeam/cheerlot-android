@@ -2,4 +2,12 @@
 <resources>
 
     <style name="Theme.CheerLot" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Android 시스템 Splash는 투명 아이콘과 앱 배경색만 표시한 뒤 Compose Lottie로 이어집니다. -->
+    <style name="Theme.CheerLot.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/system_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_transparent</item>
+        <item name="windowSplashScreenAnimationDuration">0</item>
+        <item name="postSplashScreenTheme">@style/Theme.CheerLot</item>
+    </style>
 </resources>

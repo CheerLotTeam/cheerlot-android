@@ -1,11 +1,12 @@
 package com.gms.cheerlotandroid.presentation.playback
 
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gms.cheerlotandroid.design.color.team.TeamColor
 import com.gms.cheerlotandroid.domain.model.playback.RepeatMode
 import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsEvent
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsService
+import com.gms.cheerlotandroid.domain.service.analytics.PlayViewType
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -16,7 +17,6 @@ internal data class PlaybackUiState(
     val playerName: String = "",
     val lyrics: String = "",
     val teamInitial: String = "",
-    val primaryColor: Color = Color.Black,
     val isPlaying: Boolean = false,
     val progressMs: Long = 0L,
     val durationMs: Long = 0L,
@@ -28,7 +28,8 @@ internal data class PlaybackUiState(
 // CheerLotFullScreen.BasePlayback(전체선수/검색 재생) 화면의 상태/액션.
 // 큐는 이미 화면 진입 전에 재생이 시작돼 있으므로, 별도 nav 인자 없이 audioPlayer.state만 관찰합니다.
 internal class PlaybackViewModel(
-    private val audioPlayer: AudioPlayer
+    private val audioPlayer: AudioPlayer,
+    private val analyticsService: AnalyticsService,
 ) : ViewModel() {
 
     val uiState: StateFlow<PlaybackUiState> = audioPlayer.state
@@ -42,7 +43,6 @@ internal class PlaybackViewModel(
                 lyrics = song?.lyrics.orEmpty(),
                 teamInitial = state.teamId?.value?.take(1)
                     ?: playerName.take(1),
-                primaryColor = state.teamId?.let { TeamColor.colorsFor(it).primary } ?: Color.Black,
                 isPlaying = state.isPlaying,
                 progressMs = state.currentPositionMs,
                 durationMs = state.durationMs,
@@ -84,6 +84,29 @@ internal class PlaybackViewModel(
 
     // 화면만 닫고 재생 위치/상태는 그대로 둡니다. 미니플레이어가 이어서 보여줍니다.
     fun close(onClosed: () -> Unit) {
+        val state = audioPlayer.state.value
+        analyticsService.track(
+            AnalyticsEvent.PlayViewDismissed(
+                source = state.source,
+                viewType = PlayViewType.PLAYBACK,
+                isPlaying = state.isPlaying,
+                isGameDay = state.isGameDay,
+                playerId = state.currentPlayerId,
+            )
+        )
         onClosed()
+    }
+
+    fun trackPresented() {
+        val state = audioPlayer.state.value
+        analyticsService.track(
+            AnalyticsEvent.PlayViewPresented(
+                source = state.source,
+                viewType = PlayViewType.PLAYBACK,
+                isPlaying = state.isPlaying,
+                isGameDay = state.isGameDay,
+                playerId = state.currentPlayerId,
+            )
+        )
     }
 }

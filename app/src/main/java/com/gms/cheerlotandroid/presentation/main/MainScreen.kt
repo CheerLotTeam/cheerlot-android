@@ -3,6 +3,7 @@ package com.gms.cheerlotandroid.presentation.main
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,9 +48,7 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.LineupScreen
 import com.gms.cheerlotandroid.presentation.lineup.LineupTapAction
 import com.gms.cheerlotandroid.presentation.search.SearchScreen
-import com.gms.cheerlotandroid.presentation.search.SearchViewModel
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersScreen
-import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersViewModel
 
 @Composable
 fun MainScreen(
@@ -65,6 +64,24 @@ fun MainScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedTeamId = uiState.selectedTeamId
 
+    val tabNavController = rememberNavController()
+    val tabBackStackEntry by tabNavController.currentBackStackEntryAsState()
+    val currentDestination = CheerLotMainTab.entries.firstOrNull {
+        it.route == tabBackStackEntry?.destination?.route
+    } ?: CheerLotMainTab.LINEUP
+
+    val miniPlayerViewModel: MiniPlayerViewModel =
+        viewModel(factory = LocalAppContainer.current.viewModelFactory)
+    val miniPlayerState by miniPlayerViewModel.uiState.collectAsStateWithLifecycle()
+
+    // iOS는 라인업 탭에 들어오면 전체선수/검색에서 재생 중이던 배경 재생을 멈춥니다.
+    val audioPlayer = LocalAppContainer.current.audioPlayer
+    LaunchedEffect(currentDestination) {
+        if (currentDestination == CheerLotMainTab.LINEUP) {
+            audioPlayer.pause()
+        }
+    }
+
     // Main 진입 직후 선택 팀 Flow의 첫 값이 도착하기 전에는 TeamTheme 의존 화면을 구성하지 않습니다.
     if (selectedTeamId == null) {
         Box(
@@ -77,52 +94,70 @@ fun MainScreen(
 
     TeamTheme(teamId = selectedTeamId) {
         MainContent(
+            currentDestination = currentDestination,
             tabColor = TeamTheme.colors.secondary,
-            onOpenBasePlayback = onOpenBasePlayback,
-            onOpenLineupPlayback = onOpenLineupPlayback,
-            onOpenCheerSongMenu = onOpenCheerSongMenu,
-            onOpenLineupChange = onOpenLineupChange,
-            onShowDialog = onShowDialog,
-            onOpenSettings = onOpenSettings,
-            modifier = modifier
+            miniPlayerState = miniPlayerState.takeIf {
+                currentDestination != CheerLotMainTab.LINEUP &&
+                    currentDestination != CheerLotMainTab.SEARCH
+            },
+            onDestinationSelected = { destination ->
+                tabNavController.navigate(destination.route) {
+                    popUpTo(tabNavController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            onMiniPlayerClick = {
+                miniPlayerViewModel.reopenTarget()?.let { target ->
+                    onOpenBasePlayback(target.teamId, target.cheerSongId, target.playerName)
+                }
+            },
+            onMiniPlayerPlayClick = miniPlayerViewModel::onPlayClick,
+            onMiniPlayerSkipNextClick = miniPlayerViewModel::onSkipNextClick,
+            modifier = modifier,
+            content = { innerPadding ->
+                NavHost(
+                    navController = tabNavController,
+                    startDestination = CheerLotMainTab.LINEUP.route,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                ) {
+                    composable(CheerLotMainTab.LINEUP.route) {
+                        LineupScreen(
+                            onOpenSettings = onOpenSettings,
+                            onOpenCheerSongMenu = onOpenCheerSongMenu,
+                            onOpenLineupPlayback = onOpenLineupPlayback,
+                            onOpenLineupChange = onOpenLineupChange,
+                            onShowDialog = onShowDialog,
+                        )
+                    }
+                    composable(CheerLotMainTab.TEAM_MEMBERS.route) {
+                        TeamMembersScreen(onOpenSettings = onOpenSettings)
+                    }
+                    composable(CheerLotMainTab.SEARCH.route) {
+                        SearchScreen(onOpenBasePlayback = onOpenBasePlayback)
+                    }
+                }
+            }
         )
     }
 }
 
 @Composable
 private fun MainContent(
+    currentDestination: CheerLotMainTab,
     tabColor: Color,
-    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
-    onOpenLineupPlayback: (startIndex: Int) -> Unit,
-    onOpenCheerSongMenu: (action: LineupTapAction.ShowSongList) -> Unit,
-    onOpenLineupChange: (member: PlayerInfo) -> Unit,
-    onShowDialog: (CheerLotDialog) -> Unit,
-    onOpenSettings: () -> Unit,
-    modifier: Modifier = Modifier
+    miniPlayerState: MiniPlayerUiState?,
+    onDestinationSelected: (CheerLotMainTab) -> Unit,
+    onMiniPlayerClick: () -> Unit,
+    onMiniPlayerPlayClick: () -> Unit,
+    onMiniPlayerSkipNextClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable (PaddingValues) -> Unit
 ) {
-    // TODO: tabNavController/currentDestination, MiniPlayerViewModel 상태 구독, 탭 변경 side effect를 Stateful MainScreen으로 옮겨 MainContent는 상태와 콜백만 받는 Stateless UI로 정리합니다.
-    val tabNavController = rememberNavController()
-    val tabBackStackEntry by tabNavController.currentBackStackEntryAsState()
-    val currentDestination = CheerLotMainTab.entries.firstOrNull {
-        it.route == tabBackStackEntry?.destination?.route
-    } ?: CheerLotMainTab.LINEUP
-
-    val miniPlayerViewModel: MiniPlayerViewModel =
-        viewModel(factory = LocalAppContainer.current.viewModelFactory)
-    val miniPlayerState by miniPlayerViewModel.uiState.collectAsStateWithLifecycle()
-
-    // iOS MainTabView.showMiniPlayer와 동일하게, 라인업/검색 탭에서는 미니플레이어를 숨깁니다.
-    // 라인업은 쇼츠 느낌의 풀스크린 재생이 따로 있고, 검색도 자체 미리듣기 흐름을 가지므로 배경 미니플레이어와 겹치면 안 됩니다.
-    val showMiniPlayer = currentDestination != CheerLotMainTab.LINEUP && currentDestination != CheerLotMainTab.SEARCH
-
-    // iOS는 라인업 탭에 들어오면 audioPlayer.pause()를 호출해 전체선수/검색에서 재생 중이던 배경 재생을 멈춥니다.
-    val audioPlayer = LocalAppContainer.current.audioPlayer
-    LaunchedEffect(currentDestination) {
-        if (currentDestination == CheerLotMainTab.LINEUP) {
-            audioPlayer.pause()
-        }
-    }
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -132,53 +167,15 @@ private fun MainContent(
         bottomBar = {
             MainBottomBar(
                 selectedDestination = currentDestination,
-                onDestinationSelected = { destination ->
-                    tabNavController.navigate(destination.route) {
-                        popUpTo(tabNavController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
+                onDestinationSelected = onDestinationSelected,
                 tabColor = tabColor,
-                miniPlayerState = miniPlayerState.takeIf { showMiniPlayer },
-                onMiniPlayerClick = {
-                    miniPlayerViewModel.reopenTarget()?.let { target ->
-                        onOpenBasePlayback(target.teamId, target.cheerSongId, target.playerName)
-                    }
-                },
-                onMiniPlayerPlayClick = miniPlayerViewModel::onPlayClick,
-                onMiniPlayerSkipNextClick = miniPlayerViewModel::onSkipNextClick
+                miniPlayerState = miniPlayerState,
+                onMiniPlayerClick = onMiniPlayerClick,
+                onMiniPlayerPlayClick = onMiniPlayerPlayClick,
+                onMiniPlayerSkipNextClick = onMiniPlayerSkipNextClick
             )
         }
-    ) { innerPadding ->
-        NavHost(
-            navController = tabNavController,
-            startDestination = CheerLotMainTab.LINEUP.route,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
-            composable(CheerLotMainTab.LINEUP.route) {
-                LineupScreen(
-                    onOpenSettings = onOpenSettings,
-                    onOpenCheerSongMenu = onOpenCheerSongMenu,
-                    onOpenLineupPlayback = onOpenLineupPlayback,
-                    onOpenLineupChange = onOpenLineupChange,
-                    onShowDialog = onShowDialog,
-                )
-            }
-            composable(CheerLotMainTab.TEAM_MEMBERS.route) {
-                TeamMembersTab(
-                    onOpenSettings = onOpenSettings,
-                )
-            }
-            composable(CheerLotMainTab.SEARCH.route) {
-                SearchTab(onOpenBasePlayback = onOpenBasePlayback)
-            }
-        }
-    }
+    ) { innerPadding -> content(innerPadding) }
 }
 
 @Composable
@@ -263,55 +260,6 @@ private fun MainBottomNavigationBar(
             )
         }
     }
-}
-
-@Composable
-private fun TeamMembersTab(
-    onOpenSettings: () -> Unit
-) {
-    // TODO: TeamMembersScreen을 Stateful 진입점으로, 현재 TeamMembersScreen UI를 private TeamMembersContent로 분리한 뒤 이 중간 Tab composable을 제거합니다.
-    val viewModel: TeamMembersViewModel =
-        viewModel(factory = LocalAppContainer.current.viewModelFactory)
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    TeamMembersScreen(
-        state = uiState,
-        onRefresh = viewModel::refresh,
-        onTapPlayAll = viewModel::onTapPlayAll,
-        // iOS TeamMembersViewModel.didTapSong과 동일하게 재생만 시작하고 화면 전환은 하지 않습니다.
-        // 재생 중인 곡은 하단 MiniPlayer로 노출되고, 전체화면 PlaybackView는 MiniPlayer를 탭했을 때만 엽니다.
-        onTapSong = { row ->
-            viewModel.onTapSong(row)
-        },
-        onDismissToast = viewModel::dismissToast,
-        onOpenSettings = onOpenSettings
-    )
-}
-
-@Composable
-private fun SearchTab(
-    onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit
-) {
-    val viewModel: SearchViewModel =
-        viewModel(factory = LocalAppContainer.current.viewModelFactory)
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    SearchScreen(
-        state = uiState,
-        onQueryChange = viewModel::onQueryChange,
-        // iOS SearchView와 동일하게, 전체선수 탭과 달리 결과를 탭하면 재생 시작과 동시에
-        // 미니플레이어 없이 바로 전체화면 재생화면을 엽니다.
-        onTapResult = { row ->
-            viewModel.onTapResult(row)
-            val teamId = uiState.teamId
-            val song = row.song
-            if (teamId != null && song != null) {
-                onOpenBasePlayback(teamId, song.id, row.playerName)
-            }
-        },
-        onRetry = viewModel::retry,
-        onDismissToast = viewModel::dismissToast
-    )
 }
 
 // MainTabScreen 전체는 LocalAppContainer(DI)가 필요해 프리뷰에서 크래시나므로,

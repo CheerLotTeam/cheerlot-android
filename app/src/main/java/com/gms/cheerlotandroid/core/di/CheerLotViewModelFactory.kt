@@ -27,7 +27,10 @@ class CheerLotViewModelFactory(
         return when {
             modelClass.isAssignableFrom(AppFlowViewModel::class.java) -> {
                 AppFlowViewModel(
-                    hasSelectedTeamUseCase = appContainer.hasSelectedTeamUseCase,
+                    getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
+                    remoteConfigService = appContainer.remoteConfigService,
+                    analyticsService = appContainer.analyticsService,
+                    currentVersion = com.gms.cheerlotandroid.BuildConfig.VERSION_NAME,
                 ) as T
             }
 
@@ -48,6 +51,7 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(PlaybackViewModel::class.java) -> {
                 PlaybackViewModel(
                     audioPlayer = appContainer.audioPlayer,
+                    analyticsService = appContainer.analyticsService,
                 ) as T
             }
 
@@ -60,6 +64,7 @@ class CheerLotViewModelFactory(
                     getTeamGameScheduleUseCase = appContainer.getTeamGameScheduleUseCase,
                     getTeamUseCase = appContainer.getTeamUseCase,
                     playLineupSongsUseCase = appContainer.playLineupSongsUseCase,
+                    analyticsService = appContainer.analyticsService,
                 ) as T
             }
 
@@ -70,6 +75,7 @@ class CheerLotViewModelFactory(
                     getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
                     getTeamUseCase = appContainer.getTeamUseCase,
                     audioPlayer = appContainer.audioPlayer,
+                    analyticsService = appContainer.analyticsService,
                 ) as T
             }
 
@@ -84,6 +90,7 @@ class CheerLotViewModelFactory(
                 TeamMembersViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
                     getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
+                    isGameDayUseCase = appContainer.isGameDayUseCase,
                     playTeamMembersUseCase = appContainer.playTeamMembersUseCase,
                 ) as T
             }
@@ -92,6 +99,7 @@ class CheerLotViewModelFactory(
                 SearchViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
                     getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
+                    isGameDayUseCase = appContainer.isGameDayUseCase,
                     playSearchResultUseCase = appContainer.playSearchResultUseCase,
                 ) as T
             }

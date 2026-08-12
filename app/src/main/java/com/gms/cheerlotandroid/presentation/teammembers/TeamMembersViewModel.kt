@@ -6,6 +6,7 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayTeamMembersUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.IsGameDayUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.update
 internal data class TeamMembersUiState(
     val teamId: TeamId? = null,
     val rows: List<TeamMembersRow> = emptyList(),
+    val isGameDay: Boolean = false,
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
@@ -37,6 +39,7 @@ internal data class TeamMembersUiState(
 internal class TeamMembersViewModel(
     private val getSelectedTeamUseCase: GetSelectedTeamUseCase,
     private val getAllPlayersUseCase: GetAllPlayersUseCase,
+    private val isGameDayUseCase: IsGameDayUseCase,
     private val playTeamMembersUseCase: PlayTeamMembersUseCase
 ) : ViewModel() {
 
@@ -54,8 +57,16 @@ internal class TeamMembersViewModel(
                 flowOf(TeamMembersUiState())
             } else {
                 refreshCount.flatMapLatest { refreshIndex ->
-                    flow { emitAll(getAllPlayersUseCase(teamId)) }
-                        .map { players -> TeamMembersUiState(teamId = teamId, rows = players.toTeamMembersRows()) }
+                    combine(
+                        flow { emitAll(getAllPlayersUseCase(teamId)) },
+                        isGameDayUseCase(teamId),
+                    ) { players, isGameDay ->
+                        TeamMembersUiState(
+                            teamId = teamId,
+                            rows = players.toTeamMembersRows(),
+                            isGameDay = isGameDay,
+                        )
+                    }
                         .onStart {
                             emit(
                                 TeamMembersUiState(
@@ -87,7 +98,7 @@ internal class TeamMembersViewModel(
 
     fun onTapPlayAll() {
         val state = uiState.value
-        state.teamId?.let { playTeamMembersUseCase.playAll(state.rows, it) }
+        state.teamId?.let { playTeamMembersUseCase.playAll(state.rows, it, state.isGameDay) }
     }
 
     fun onTapSong(row: TeamMembersRow) {
@@ -96,7 +107,12 @@ internal class TeamMembersViewModel(
             toastState.value = ToastState(message = "아직 개인 응원가가 없어요", isVisible = true)
             return
         }
-        playTeamMembersUseCase.playSelected(row, uiState.value.rows, teamId)
+        playTeamMembersUseCase.playSelected(
+            row,
+            uiState.value.rows,
+            teamId,
+            uiState.value.isGameDay,
+        )
     }
 
     fun dismissToast() {

@@ -68,7 +68,9 @@ fun CheerLotNavHost(
                             member = action.member,
                             startIndex = action.startIndex,
                             queueSongs = action.queueSongs,
-                            queuePlayerNames = action.queuePlayerNames
+                            queuePlayerNames = action.queuePlayerNames,
+                            queuePlayerIds = action.queuePlayerIds,
+                            isGameDay = action.isGameDay,
                         )
                     )
                 },
@@ -95,9 +97,7 @@ fun CheerLotNavHost(
             SettingsScreen(
                 state = uiState,
                 onTapTeamCard = {
-                    uiState.currentTeam?.let { team ->
-                        presentationState.showSheet(CheerLotSheet.TeamChange(selectedTeamId = team.id))
-                    }
+                    presentationState.showSheet(CheerLotSheet.TeamChange)
                 },
                 onSelectAppIconMode = viewModel::onSelectAppIconMode,
                 onTapServiceInfo = {

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.service.playback.AudioPlayer
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsService
+import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsUserProperty
 import com.gms.cheerlotandroid.domain.usecase.team.GetAllTeamsUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.UpdateSelectedTeamUseCase
@@ -19,21 +21,39 @@ class TeamSelectViewModel(
     private val getSelectedTeamUseCase: GetSelectedTeamUseCase,
     private val updateSelectedTeamUseCase: UpdateSelectedTeamUseCase,
     private val audioPlayer: AudioPlayer,
+    private val analyticsService: AnalyticsService,
     val mode: TeamSelectMode = TeamSelectMode.ONBOARDING
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TeamSelectUiState(teams = getAllTeamsUseCase()))
     val uiState: StateFlow<TeamSelectUiState> = _uiState.asStateFlow()
 
     init {
-        // onboarding이면 아직 선택된 팀이 없어 null, change면 현재 선택된 팀이 나옴
-        viewModelScope.launch {
-            val currentTeamId = getSelectedTeamUseCase().first()
-            _uiState.update { it.copy(selectedTeamId = currentTeamId) }
+        if (mode == TeamSelectMode.ONBOARDING) {
+            viewModelScope.launch {
+                val currentTeamId = getSelectedTeamUseCase().first()
+                _uiState.update { it.copy(selectedTeamId = currentTeamId) }
+            }
         }
     }
 
     fun select(teamId: TeamId) {
         _uiState.update { it.copy(selectedTeamId = teamId) }
+    }
+
+    // 팀 변경 Sheet를 열 때 저장하지 않은 이전 선택 상태를 현재 팀으로 되돌립니다.
+    fun prepareChange() {
+        _uiState.update { it.copy(selectedTeamId = null, isSubmitting = false) }
+        viewModelScope.launch {
+            val currentTeamId = getSelectedTeamUseCase().first()
+            _uiState.update { state ->
+                // 저장값 조회 중 사용자가 팀을 골랐다면 새 선택을 덮어쓰지 않습니다.
+                if (state.selectedTeamId == null) {
+                    state.copy(selectedTeamId = currentTeamId)
+                } else {
+                    state
+                }
+            }
+        }
     }
 
     fun complete(onComplete: () -> Unit) {
@@ -47,6 +67,7 @@ class TeamSelectViewModel(
         audioPlayer.stop()
         viewModelScope.launch {
             updateSelectedTeamUseCase(teamId)
+            analyticsService.setUserProperty(AnalyticsUserProperty.TEAM_ID, teamId.value)
             onComplete()
             // 이 ViewModel은 CHANGE 모드에서 시트를 열 때마다 새로 만들어지지 않고 재사용되므로,
             // 여기서 풀어주지 않으면 두 번째 팀 변경부터 isSubmitting=true에 막혀 완료가 계속 무시됩니다.

@@ -144,7 +144,7 @@ private fun LineupChangeContent(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = colors.primaryColor)
+                CircularProgressIndicator()
             }
         }
 

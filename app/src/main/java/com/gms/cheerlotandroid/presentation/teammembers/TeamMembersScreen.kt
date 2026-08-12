@@ -11,12 +11,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gms.cheerlotandroid.core.di.LocalAppContainer
 import com.gms.cheerlotandroid.data.source.TeamCatalog
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
 import com.gms.cheerlotandroid.design.component.CustomToastMessage
@@ -29,6 +34,28 @@ import com.gms.cheerlotandroid.presentation.teammembers.component.PlayButton
 
 @Composable
 internal fun TeamMembersScreen(
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val viewModel: TeamMembersViewModel =
+        viewModel(factory = LocalAppContainer.current.viewModelFactory)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    TeamMembersContent(
+        state = uiState,
+        onRefresh = viewModel::refresh,
+        onTapPlayAll = viewModel::onTapPlayAll,
+        // iOS TeamMembersViewModel.didTapSong과 동일하게 재생만 시작하고 화면 전환은 하지 않습니다.
+        // 재생 중인 곡은 하단 MiniPlayer로 노출되고, 전체화면 PlaybackView는 MiniPlayer를 탭했을 때만 엽니다.
+        onTapSong = viewModel::onTapSong,
+        onDismissToast = viewModel::dismissToast,
+        onOpenSettings = onOpenSettings,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun TeamMembersContent(
     state: TeamMembersUiState,
     onRefresh: () -> Unit,
     onTapPlayAll: () -> Unit,
@@ -39,7 +66,7 @@ internal fun TeamMembersScreen(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = GrayScaleColor.GrayWhite,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CustomTopAppBarTitleWithProfile(title = "전체 선수", onProfileClick = onOpenSettings)
         },
@@ -54,7 +81,7 @@ internal fun TeamMembersScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            TeamMembersContent(state = state, onTapPlayAll = onTapPlayAll, onTapSong = onTapSong)
+            TeamMembersList(state = state, onTapPlayAll = onTapPlayAll, onTapSong = onTapSong)
 
             CustomToastMessage(
                 message = state.toastMessage,
@@ -66,7 +93,7 @@ internal fun TeamMembersScreen(
 }
 
 @Composable
-private fun TeamMembersContent(
+private fun TeamMembersList(
     state: TeamMembersUiState,
     onTapPlayAll: () -> Unit,
     onTapSong: (TeamMembersRow) -> Unit

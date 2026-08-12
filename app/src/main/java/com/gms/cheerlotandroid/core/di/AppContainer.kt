@@ -2,6 +2,9 @@ package com.gms.cheerlotandroid.core.di
 
 import android.content.Context
 import androidx.room.Room
+import com.gms.cheerlotandroid.BuildConfig
+import com.gms.cheerlotandroid.core.analytics.AmplitudeAnalyticsService
+import com.gms.cheerlotandroid.core.remoteconfig.FirebaseRemoteConfigService
 import com.gms.cheerlotandroid.data.network.NetworkModule
 import com.gms.cheerlotandroid.data.repository.PlayerRepositoryImpl
 import com.gms.cheerlotandroid.data.repository.TeamRepositoryImpl
@@ -33,14 +36,20 @@ import com.gms.cheerlotandroid.domain.usecase.team.GetAllTeamsUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamGameScheduleUseCase
-import com.gms.cheerlotandroid.domain.usecase.team.HasSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.UpdateSelectedTeamUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.IsGameDayUseCase
 
 // 앱 전역 의존성은 AppContainer에서 한 번 생성하고 필요한 계층으로 전달합니다.
 class AppContainer(
     context: Context,
 ) {
     private val appContext = context.applicationContext
+
+    val analyticsService by lazy {
+        AmplitudeAnalyticsService(appContext, BuildConfig.AMPLITUDE_KEY)
+    }
+
+    val remoteConfigService by lazy { FirebaseRemoteConfigService() }
 
     // Room Database는 앱 전체에서 하나의 인스턴스를 공유합니다.
     val database: CheerLotDatabase by lazy {
@@ -60,7 +69,7 @@ class AppContainer(
     // 접근해 같은 인스턴스에 MediaSession을 붙일 수 있게 합니다. 나머지 호출부는 그대로
     // AudioPlayer(domain) 인터페이스로만 사용합니다.
     val audioPlayer: AudioPlaybackPlayer by lazy {
-        AudioPlaybackPlayer(context = appContext)
+        AudioPlaybackPlayer(context = appContext, analyticsService = analyticsService)
     }
 
     val teamRepository: TeamRepository by lazy {
@@ -118,6 +127,10 @@ class AppContainer(
         GetLineupGameInfoUseCase(teamRepository = teamRepository)
     }
 
+    val isGameDayUseCase: IsGameDayUseCase by lazy {
+        IsGameDayUseCase(getLineupGameInfoUseCase = getLineupGameInfoUseCase)
+    }
+
     val getTeamGameScheduleUseCase: GetTeamGameScheduleUseCase by lazy {
         GetTeamGameScheduleUseCase(teamRepository = teamRepository)
     }
@@ -136,10 +149,6 @@ class AppContainer(
 
     val updateSelectedTeamUseCase: UpdateSelectedTeamUseCase by lazy {
         UpdateSelectedTeamUseCase(teamSelectionRepository = teamSelectionRepository)
-    }
-
-    val hasSelectedTeamUseCase: HasSelectedTeamUseCase by lazy {
-        HasSelectedTeamUseCase(teamSelectionRepository = teamSelectionRepository)
     }
 
     val playLineupSongsUseCase: PlayLineupSongsUseCase by lazy {

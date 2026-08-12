@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,12 +41,14 @@ fun TeamSelectCell(
     val backgroundColor = if (isSelected) teamColors.primary else GrayScaleColor.GrayWhite
     val borderColor = if (isSelected) teamColors.primary else GrayScaleColor.Gray000
     val textColor = if (isSelected) GrayScaleColor.GrayWhite else GrayScaleColor.Gray300
+    val cellShape = RoundedCornerShape(10.dp)
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(color = backgroundColor, shape = RoundedCornerShape(10.dp))
-            .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(10.dp))
+            .clip(cellShape)
+            .background(color = backgroundColor, shape = cellShape)
+            .border(width = 1.dp, color = borderColor, shape = cellShape)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically)

@@ -5,4 +5,6 @@ sealed interface AppFlowState {
     data object Splash : AppFlowState
     data object Onboarding : AppFlowState
     data object Main : AppFlowState
+    data class UpdateRequired(val minimumVersion: String) : AppFlowState
+    data class ServerChecking(val message: String) : AppFlowState
 }

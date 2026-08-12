@@ -7,6 +7,7 @@ internal data class SearchUiState(
     val teamId: TeamId? = null,
     val query: String = "",
     val results: List<TeamMembersRow> = emptyList(),
+    val isGameDay: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val toastMessage: String = "",

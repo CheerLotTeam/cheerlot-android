@@ -6,6 +6,7 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlaySearchResultUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.IsGameDayUseCase
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersRow
 import com.gms.cheerlotandroid.presentation.teammembers.toTeamMembersRows
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,6 +30,7 @@ private const val MAX_QUERY_LENGTH = 12
 private data class TeamRows(
     val teamId: TeamId?,
     val rows: List<TeamMembersRow> = emptyList(),
+    val isGameDay: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
@@ -39,6 +41,7 @@ private data class TeamRows(
 internal class SearchViewModel(
     getSelectedTeamUseCase: GetSelectedTeamUseCase,
     private val getAllPlayersUseCase: GetAllPlayersUseCase,
+    private val isGameDayUseCase: IsGameDayUseCase,
     private val playSearchResultUseCase: PlaySearchResultUseCase
 ) : ViewModel() {
 
@@ -57,8 +60,16 @@ internal class SearchViewModel(
                 flowOf(TeamRows(teamId = null))
             } else {
                 refreshCount.flatMapLatest {
-                    flow { emitAll(getAllPlayersUseCase(teamId)) }
-                        .map { players -> TeamRows(teamId = teamId, rows = players.toTeamMembersRows()) }
+                    combine(
+                        flow { emitAll(getAllPlayersUseCase(teamId)) },
+                        isGameDayUseCase(teamId),
+                    ) { players, isGameDay ->
+                        TeamRows(
+                            teamId = teamId,
+                            rows = players.toTeamMembersRows(),
+                            isGameDay = isGameDay,
+                        )
+                    }
                         .onStart { emit(TeamRows(teamId = teamId, isLoading = true)) }
                         .catch { throwable ->
                             emit(
@@ -82,6 +93,7 @@ internal class SearchViewModel(
                 } else {
                     teamRows.rows.filter { it.playerName.contains(currentQuery) }
                 },
+                isGameDay = teamRows.isGameDay,
                 isLoading = teamRows.isLoading,
                 errorMessage = teamRows.errorMessage,
                 toastMessage = toast.message,
@@ -99,7 +111,12 @@ internal class SearchViewModel(
             toastState.value = ToastState(message = "아직 개인 응원가가 없어요", isVisible = true)
             return
         }
-        playSearchResultUseCase.play(row, uiState.value.results, teamId)
+        playSearchResultUseCase.play(
+            row,
+            uiState.value.results,
+            teamId,
+            uiState.value.isGameDay,
+        )
     }
 
     fun retry() {
