@@ -110,7 +110,7 @@ private fun MiniPlayerCover(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(GrayScaleColor.Gray100)
     ) {
         if (coverResId != null) {
