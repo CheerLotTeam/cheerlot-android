@@ -22,6 +22,4 @@ sealed interface CheerLotSheet {
     ) : CheerLotSheet
 
     data object TeamChange : CheerLotSheet
-
-    data object Inquiry : CheerLotSheet
 }

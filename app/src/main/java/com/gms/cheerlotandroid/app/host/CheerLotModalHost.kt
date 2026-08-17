@@ -21,7 +21,6 @@ import com.gms.cheerlotandroid.presentation.lineupplayback.LineupPlaybackScreen
 import com.gms.cheerlotandroid.presentation.onboarding.TeamSelectMode
 import com.gms.cheerlotandroid.presentation.onboarding.TeamSelectScreen
 import com.gms.cheerlotandroid.presentation.playback.PlaybackScreen
-import com.gms.cheerlotandroid.presentation.settings.component.InquiryWebViewSheet
 import kotlinx.coroutines.launch
 
 // presentationState의 modal 상태를 관찰해 실제 modal UI로 그려주는 root host입니다.
@@ -116,15 +115,6 @@ fun CheerLotModalHost(presentationState: CheerLotPresentationState) {
                     onComplete = dismissWithAnimation,
                     onClose = dismissWithAnimation
                 )
-            }
-        }
-
-        is CheerLotSheet.Inquiry -> {
-            ModalBottomSheet(
-                onDismissRequest = presentationState::dismissSheet,
-                containerColor = MaterialTheme.colorScheme.background
-            ) {
-                InquiryWebViewSheet()
             }
         }
 
