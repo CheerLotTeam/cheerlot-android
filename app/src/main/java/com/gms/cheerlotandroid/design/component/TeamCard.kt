@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -88,7 +89,15 @@ fun TeamCard(
             Text(
                 text = team.englishFullName.uppercase(),
                 style = CheerLotTextStyle.T2.merge(
-                    TextStyle(shadow = Shadow(colors.primaryPalette.color600, blurRadius = 8f, offset = Offset(0f, 1f)))
+                    TextStyle(
+                        shadow = LocalDensity.current.run {
+                            Shadow(
+                                color = colors.primaryPalette.color600,
+                                blurRadius = 8.dp.toPx(),
+                                offset = Offset(0f, 1.dp.toPx())
+                            )
+                        }
+                    )
                 ),
                 color = GrayScaleColor.GrayWhite
             )
