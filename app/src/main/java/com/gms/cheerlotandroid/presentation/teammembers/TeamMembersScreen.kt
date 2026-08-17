@@ -1,6 +1,7 @@
 package com.gms.cheerlotandroid.presentation.teammembers
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -144,13 +146,16 @@ private fun TeamMembersList(
             // 헤더(TeamCard+전체재생)는 팀이 정해지면 항상 보여주고, 목록 부분만 로딩/에러/실제 목록으로 나뉩니다.
             // 헤더 바로 아래(첫 항목)는 16dp, 그 아래로는 셀 간 기존 간격(24dp)을 유지합니다.
             when {
+                // iOS TeamMembersView의 ProgressView()와 동일하게 스피너로 로딩 상태를 보여줍니다.
                 state.isLoading -> item {
-                    Text(
-                        text = "선수 목록을 불러오는 중이에요",
-                        style = CheerLotTextStyle.M4,
-                        color = GrayScaleColor.Gray400,
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
 
                 state.errorMessage != null -> item {
