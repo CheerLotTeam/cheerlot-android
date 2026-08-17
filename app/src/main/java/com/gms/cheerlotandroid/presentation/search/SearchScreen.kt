@@ -14,14 +14,23 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,12 +56,31 @@ internal fun SearchScreen(
     val viewModel: SearchViewModel =
         viewModel(factory = LocalAppContainer.current.viewModelFactory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+
+    // 검색 탭에 들어오면 바로 입력할 수 있도록 검색창에 자동으로 포커스를 주고 키보드를 띄웁니다.
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboardController?.show()
+    }
+
+    // 다른 탭으로 전환되는 등 이 화면이 포커스를 정리할 새 없이 그대로 컴포지션에서 사라지는
+    // 모든 경로에 대한 안전장치로, 화면이 사라질 때 키보드를 닫습니다.
+    DisposableEffect(Unit) {
+        onDispose { keyboardController.hideKeyboard(focusManager) }
+    }
 
     SearchContent(
         state = uiState,
         onQueryChange = viewModel::onQueryChange,
+        focusRequester = focusRequester,
         // iOS SearchView와 동일하게 결과를 탭하면 재생 시작과 동시에 전체화면 재생화면을 엽니다.
         onTapResult = { row ->
+            // SearchTextField가 포커스를 쥔 채로 화면이 재생 화면으로 전환되면 키보드가
+            // 정리되지 않고 화면 위에 투명하게 남는 문제가 있어, 전환 전에 명시적으로 닫습니다.
+            keyboardController.hideKeyboard(focusManager)
             viewModel.onTapResult(row)
             val teamId = uiState.teamId
             val song = row.song
@@ -66,10 +94,19 @@ internal fun SearchScreen(
     )
 }
 
+// 이 화면 안에서 "키보드 내리기"가 여러 지점(결과 탭, 스크롤 시작, 화면 이탈)에서 반복 필요해
+// 하나로 모았습니다. hide()만으로는 텍스트필드가 포커스를 계속 쥐고 있어 다시 탭하지 않아도
+// 키보드가 바로 재표시되는 경우가 있어 focusManager.clearFocus()를 항상 같이 호출합니다.
+private fun SoftwareKeyboardController?.hideKeyboard(focusManager: FocusManager) {
+    this?.hide()
+    focusManager.clearFocus()
+}
+
 @Composable
 private fun SearchContent(
     state: SearchUiState,
     onQueryChange: (String) -> Unit,
+    focusRequester: FocusRequester,
     onTapResult: (TeamMembersRow) -> Unit,
     onRetry: () -> Unit,
     onDismissToast: () -> Unit,
@@ -90,6 +127,7 @@ private fun SearchContent(
                 SearchTextField(
                     query = state.query,
                     onQueryChange = onQueryChange,
+                    focusRequester = focusRequester,
                     modifier = Modifier.padding(top = 12.dp, bottom = 16.dp)
                 )
 
@@ -117,6 +155,17 @@ private fun SearchContent(
                     else -> {
                         TeamTheme(teamId = teamId) {
                             val primaryColor = TeamTheme.colors.primary
+                            val keyboardController = LocalSoftwareKeyboardController.current
+                            val focusManager = LocalFocusManager.current
+                            val lazyListState = rememberLazyListState()
+
+                            // iOS SearchView의 .scrollDismissesKeyboard(.immediately)와 동일하게,
+                            // 결과 목록을 스크롤하기 시작하면 키보드를 바로 닫습니다.
+                            LaunchedEffect(lazyListState.isScrollInProgress) {
+                                if (lazyListState.isScrollInProgress) {
+                                    keyboardController.hideKeyboard(focusManager)
+                                }
+                            }
 
                             // SearchTextField가 이미 쓴 높이를 빼고 남은 공간을 이 Column에 정확히
                             // 할당해야, LazyColumn이 Column의 전체 높이로 측정돼 하단이 잘리는 걸
@@ -130,6 +179,7 @@ private fun SearchContent(
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
                                 LazyColumn(
+                                    state = lazyListState,
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(24.dp)
                                 ) {

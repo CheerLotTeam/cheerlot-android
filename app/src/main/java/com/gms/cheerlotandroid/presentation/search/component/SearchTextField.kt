@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.design.color.grayscale.GrayScaleColor
@@ -32,7 +34,8 @@ import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 internal fun SearchTextField(
     query: String,
     onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null
 ) {
     Row(
         modifier = modifier
@@ -63,7 +66,9 @@ internal fun SearchTextField(
                 singleLine = true,
                 textStyle = CheerLotTextStyle.M4.copy(color = GrayScaleColor.Gray800),
                 cursorBrush = SolidColor(GrayScaleColor.Gray800),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .let { if (focusRequester != null) it.focusRequester(focusRequester) else it }
             )
         }
         if (query.isNotEmpty()) {
