@@ -114,7 +114,7 @@ internal fun SettingsScreen(
 private fun MyTeamSection(team: TeamInfo, onTapTeamCard: () -> Unit) {
     SettingsSection(title = "나의 팀") {
         TeamTheme(teamId = team.id) {
-            TeamCard(team = team, onClick = onTapTeamCard)
+            TeamCard(team = team, onClick = onTapTeamCard, showMoreIcon = true)
         }
     }
 }

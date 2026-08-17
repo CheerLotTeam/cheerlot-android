@@ -10,7 +10,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,8 +37,15 @@ import com.gms.cheerlotandroid.domain.model.team.TeamInfo
 
 // 호출부가 TeamTheme(teamId) { ... }로 감싸져 있다는 전제로 TeamTheme.colors를 바로 읽습니다.
 // 배경 텍스처(team_card_bg, 소프트라이트 블렌드)는 LineupCard와 동일한 에셋/방식을 재사용합니다.
+// showMoreIcon: iOS의 설정 화면 전용 TeamCardButton과 동일하게, 설정 화면(나의 팀)에서만
+// 우측 상단에 ellipsis 아이콘을 보여줍니다. 전체선수 탭 헤더에서는 쓰지 않습니다.
 @Composable
-fun TeamCard(team: TeamInfo, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+fun TeamCard(
+    team: TeamInfo,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    showMoreIcon: Boolean = false
+) {
     val shape = RoundedCornerShape(12.dp)
     val colors = TeamTheme.colors
 
@@ -82,6 +93,18 @@ fun TeamCard(team: TeamInfo, modifier: Modifier = Modifier, onClick: (() -> Unit
                 color = GrayScaleColor.GrayWhite
             )
             Text(text = team.slogan.uppercase(), style = CheerLotTextStyle.M5, color = colors.primaryPalette.color200)
+        }
+
+        if (showMoreIcon) {
+            Icon(
+                imageVector = Icons.Filled.MoreHoriz,
+                contentDescription = null,
+                tint = colors.primaryPalette.color200,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 16.dp, end = 14.dp)
+                    .size(16.dp)
+            )
         }
     }
 }
