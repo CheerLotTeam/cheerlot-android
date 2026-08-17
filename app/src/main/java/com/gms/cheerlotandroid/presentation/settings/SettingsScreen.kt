@@ -141,7 +141,7 @@ private fun AppIconSection(
         ) {
             AppIconOption(
                 label = "기본",
-                iconRes = R.mipmap.ic_launcher,
+                iconRes = R.mipmap.ic_launcher_preview,
                 selected = !isTeamSelected,
                 accentColor = accentColor,
                 onClick = { onSelectMode(AppIconMode.BASE) }
@@ -149,7 +149,7 @@ private fun AppIconSection(
             AppIconOption(
                 label = "팀",
                 iconRes = currentTeamId?.let(TeamResource::launcherIconRes)
-                    ?: R.mipmap.ic_launcher,
+                    ?: R.mipmap.ic_launcher_preview,
                 selected = isTeamSelected,
                 accentColor = accentColor,
                 onClick = { onSelectMode(AppIconMode.TEAM) }
