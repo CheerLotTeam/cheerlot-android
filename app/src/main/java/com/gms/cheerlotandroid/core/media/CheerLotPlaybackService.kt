@@ -16,8 +16,9 @@ class CheerLotPlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
 
-        val exoPlayer = (application as CheerLotApplication).appContainer.audioPlayer.exoPlayer
-        val session = MediaSession.Builder(this, exoPlayer).build()
+        val audioPlayer = (application as CheerLotApplication).appContainer.audioPlayer
+        val sessionPlayer = SkipRoutingPlayer(exoPlayer = audioPlayer.exoPlayer, audioPlayer = audioPlayer)
+        val session = MediaSession.Builder(this, sessionPlayer).build()
         mediaSession = session
         // MediaSessionService의 자동 알림/포그라운드 승격은 addSession으로 등록된 세션만 관찰합니다.
         // 이걸 빠뜨리면 startForegroundService() 이후 startForeground()가 제때 호출되지 않아
