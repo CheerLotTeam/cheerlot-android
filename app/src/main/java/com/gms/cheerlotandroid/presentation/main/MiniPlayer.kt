@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,7 +40,8 @@ import com.gms.cheerlotandroid.design.typography.CheerLotTextStyle
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 
 internal data class MiniPlayerUiState(
-    val title: String,
+    val playerName: String,
+    val songTitle: String,
     val teamId: TeamId?,
     val isPlaying: Boolean
 )
@@ -66,14 +68,23 @@ internal fun MiniPlayer(
             modifier = Modifier.size(40.dp)
         )
         Spacer(modifier = Modifier.width(14.dp))
-        Text(
-            text = state.title,
-            modifier = Modifier.weight(1f),
-            style = CheerLotTextStyle.SB7,
-            color = GrayScaleColor.Gray900,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        // iOS MiniPlayerView.cheerSongInfo와 동일하게, 선수 이름/응원가 제목을 좌측 정렬 2줄로 보여줍니다.
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = state.playerName,
+                style = CheerLotTextStyle.SB9,
+                color = GrayScaleColor.GrayBlack,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = state.songTitle,
+                style = CheerLotTextStyle.R3,
+                color = GrayScaleColor.GrayBlack,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -134,7 +145,8 @@ private fun MiniPlayerPreview() {
     CheerLotTheme {
         MiniPlayer(
             state = MiniPlayerUiState(
-                title = "김도영",
+                playerName = "김도영",
+                songTitle = "안타송",
                 teamId = TeamId("KIA"),
                 isPlaying = false
             )

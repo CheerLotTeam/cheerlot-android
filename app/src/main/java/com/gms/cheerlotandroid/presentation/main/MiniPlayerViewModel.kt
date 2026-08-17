@@ -31,7 +31,8 @@ internal class MiniPlayerViewModel(
             val playerName = state.currentPlayerName.orEmpty()
 
             MiniPlayerUiState(
-                title = "$playerName · ${song.title}",
+                playerName = playerName,
+                songTitle = song.title,
                 teamId = state.teamId,
                 isPlaying = state.isPlaying
             )
