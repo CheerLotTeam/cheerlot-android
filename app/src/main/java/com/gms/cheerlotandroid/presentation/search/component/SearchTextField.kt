@@ -56,7 +56,7 @@ internal fun SearchTextField(
             if (query.isEmpty()) {
                 Text(
                     text = "검색어를 입력해주세요",
-                    style = CheerLotTextStyle.M4,
+                    style = CheerLotTextStyle.M3,
                     color = GrayScaleColor.Gray300
                 )
             }
