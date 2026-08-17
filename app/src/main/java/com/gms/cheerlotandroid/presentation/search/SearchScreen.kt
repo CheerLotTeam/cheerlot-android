@@ -85,7 +85,7 @@ private fun SearchContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = 16.dp)
             ) {
                 SearchTextField(
                     query = state.query,

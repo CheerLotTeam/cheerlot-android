@@ -39,7 +39,7 @@ import com.gms.cheerlotandroid.domain.model.player.PlayerInfo
 import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.lineup.component.LineupCard
 
-private val cardHorizontalPadding = 20.dp
+private val cardHorizontalPadding = 16.dp
 private val cardBottomPadding = 10.dp
 
 @Composable
