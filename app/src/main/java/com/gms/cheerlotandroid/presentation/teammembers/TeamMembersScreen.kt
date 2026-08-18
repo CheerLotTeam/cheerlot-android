@@ -121,7 +121,7 @@ private fun TeamMembersList(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
         ) {
             item { TeamCard(team = team) }
             item {

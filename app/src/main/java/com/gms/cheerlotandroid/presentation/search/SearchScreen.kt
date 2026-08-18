@@ -145,7 +145,7 @@ private fun SearchContent(
                     query = state.query,
                     onQueryChange = onQueryChange,
                     focusRequester = focusRequester,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 val teamId = state.teamId

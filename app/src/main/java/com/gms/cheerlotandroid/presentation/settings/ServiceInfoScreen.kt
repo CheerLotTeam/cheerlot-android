@@ -33,7 +33,7 @@ internal fun ServiceInfoScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 20.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             SettingsSection(title = "쳐랏 소개") {
