@@ -30,7 +30,7 @@ internal fun MakerInfoScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 20.dp)
+                .padding(horizontal = 16.dp, vertical = 20.dp)
         ) {
             SettingsSection(title = "쳐랏 팀") {
                 SettingsMenuCard(

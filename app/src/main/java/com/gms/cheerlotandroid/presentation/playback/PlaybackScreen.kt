@@ -141,7 +141,7 @@ private fun PlaybackContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -222,7 +222,7 @@ private fun Lyrics(lyrics: String, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(scroll)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 20.dp)
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .drawWithContent {
                 drawContent()
@@ -280,14 +280,14 @@ private fun Footer(
             PlaybackControl(
                 icon = Icons.Filled.Shuffle,
                 description = "셔플",
-                iconSize = 21.dp,
+                iconSize = 24.dp,
                 isHighlighted = state.isShuffleEnabled,
                 onClick = onToggleShuffle
             )
             PlaybackControl(
                 icon = Icons.Filled.SkipPrevious,
                 description = "이전 곡",
-                iconSize = 24.dp,
+                iconSize = 28.dp,
                 isHighlighted = state.canSkipManually,
                 isClickable = state.canSkipManually,
                 onClick = onPlayPrevious
@@ -295,14 +295,14 @@ private fun Footer(
             PlaybackControl(
                 icon = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 description = "재생",
-                iconSize = 32.dp,
+                iconSize = 36.dp,
                 isHighlighted = true,
                 onClick = onTogglePlayback
             )
             PlaybackControl(
                 icon = Icons.Filled.SkipNext,
                 description = "다음 곡",
-                iconSize = 24.dp,
+                iconSize = 28.dp,
                 isHighlighted = state.canSkipManually,
                 isClickable = state.canSkipManually,
                 onClick = onPlayNext
@@ -310,7 +310,7 @@ private fun Footer(
             PlaybackControl(
                 icon = Icons.Filled.Repeat,
                 description = "반복",
-                iconSize = 21.dp,
+                iconSize = 24.dp,
                 isHighlighted = state.isRepeatOneEnabled,
                 onClick = onToggleRepeatOne
             )

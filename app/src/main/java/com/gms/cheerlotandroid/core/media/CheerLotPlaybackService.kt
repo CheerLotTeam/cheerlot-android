@@ -1,5 +1,6 @@
 package com.gms.cheerlotandroid.core.media
 
+import android.app.PendingIntent
 import android.content.Intent
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -16,8 +17,11 @@ class CheerLotPlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
 
-        val exoPlayer = (application as CheerLotApplication).appContainer.audioPlayer.exoPlayer
-        val session = MediaSession.Builder(this, exoPlayer).build()
+        val audioPlayer = (application as CheerLotApplication).appContainer.audioPlayer
+        val sessionPlayer = SkipRoutingPlayer(exoPlayer = audioPlayer.exoPlayer, audioPlayer = audioPlayer)
+        val session = MediaSession.Builder(this, sessionPlayer)
+            .apply { sessionActivityPendingIntent()?.let(::setSessionActivity) }
+            .build()
         mediaSession = session
         // MediaSessionService의 자동 알림/포그라운드 승격은 addSession으로 등록된 세션만 관찰합니다.
         // 이걸 빠뜨리면 startForegroundService() 이후 startForeground()가 제때 호출되지 않아
@@ -27,6 +31,20 @@ class CheerLotPlaybackService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
         return mediaSession
+    }
+
+    // MediaSession.Builder에 setSessionActivity를 안 넘기면 알림/잠금화면의 콘텐츠 인텐트가
+    // null로 남아서, iOS의 Control Center Now Playing과 달리 알림을 탭해도 앱이 안 열립니다.
+    // MainActivity 자신은 LAUNCHER intent-filter가 없어(activity-alias로만 진입) 직접 가리킬
+    // 수 없으므로, 현재 활성화된 alias를 그대로 따라가는 getLaunchIntentForPackage를 씁니다.
+    private fun sessionActivityPendingIntent(): PendingIntent? {
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return null
+        return PendingIntent.getActivity(
+            this,
+            0,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
     // 앱이 태스크에서 스와이프로 제거돼도, 재생 중이면 백그라운드 재생을 이어갑니다.

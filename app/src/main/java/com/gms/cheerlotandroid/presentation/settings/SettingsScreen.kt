@@ -66,7 +66,7 @@ internal fun SettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 val currentTeam = state.currentTeam
@@ -114,7 +114,7 @@ internal fun SettingsScreen(
 private fun MyTeamSection(team: TeamInfo, onTapTeamCard: () -> Unit) {
     SettingsSection(title = "나의 팀") {
         TeamTheme(teamId = team.id) {
-            TeamCard(team = team, onClick = onTapTeamCard)
+            TeamCard(team = team, onClick = onTapTeamCard, showMoreIcon = true)
         }
     }
 }
@@ -141,7 +141,7 @@ private fun AppIconSection(
         ) {
             AppIconOption(
                 label = "기본",
-                iconRes = R.mipmap.ic_launcher,
+                iconRes = R.mipmap.ic_launcher_preview,
                 selected = !isTeamSelected,
                 accentColor = accentColor,
                 onClick = { onSelectMode(AppIconMode.BASE) }
@@ -149,7 +149,7 @@ private fun AppIconSection(
             AppIconOption(
                 label = "팀",
                 iconRes = currentTeamId?.let(TeamResource::launcherIconRes)
-                    ?: R.mipmap.ic_launcher,
+                    ?: R.mipmap.ic_launcher_preview,
                 selected = isTeamSelected,
                 accentColor = accentColor,
                 onClick = { onSelectMode(AppIconMode.TEAM) }

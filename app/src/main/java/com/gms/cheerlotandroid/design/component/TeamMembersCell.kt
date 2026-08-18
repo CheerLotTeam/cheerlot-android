@@ -32,8 +32,8 @@ fun TeamMembersCell(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 이름과 등번호는 폰트 크기가 달라 CenterVertically로만 맞추면 서로 어긋나 보여서,
-        // 두 텍스트만 따로 Row로 묶어 baseline 기준으로 정렬합니다.
-        Row(verticalAlignment = Alignment.Bottom) {
+        // 두 텍스트만 따로 Row로 묶어 정렬합니다.
+        Row(verticalAlignment = Alignment.Top) {
             Text(text = row.playerName, style = CheerLotTextStyle.SB4, color = GrayScaleColor.GrayBlack)
             Spacer(Modifier.width(3.dp))
             Text(text = row.backNumber.toString(), style = CheerLotTextStyle.M3, color = GrayScaleColor.Gray400)

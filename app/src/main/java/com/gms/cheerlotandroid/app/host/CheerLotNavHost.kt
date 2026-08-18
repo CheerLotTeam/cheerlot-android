@@ -90,6 +90,7 @@ fun CheerLotNavHost(
             )
         }
         composable(CheerLotRoute.Settings.route) {
+            val context = LocalContext.current
             val viewModel: SettingsViewModel =
                 viewModel(factory = LocalAppContainer.current.viewModelFactory)
             val uiState by viewModel.uiState.collectAsState()
@@ -106,8 +107,10 @@ fun CheerLotNavHost(
                 onTapMakerInfo = {
                     navController.navigate(CheerLotRoute.MakerInfo.route)
                 },
+                // "대표 페이지"(onTapMainPage)와 동일하게, 문의하기도 앱 내 시트가 아니라
+                // 외부 브라우저로 구글폼을 엽니다.
                 onTapInquiry = {
-                    presentationState.showSheet(CheerLotSheet.Inquiry)
+                    context.openExternalUrl(AppLinks.INQUIRY_FORM_URL)
                 },
                 onDismissToast = viewModel::dismissToast,
                 onBack = navController::navigateUp

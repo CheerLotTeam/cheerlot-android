@@ -276,7 +276,8 @@ private fun MainContentPreview() {
                 onDestinationSelected = { selectedDestination = it },
                 tabColor = TeamTheme.colors.secondary,
                 miniPlayerState = MiniPlayerUiState(
-                    title = "김도영",
+                    playerName = "김도영",
+                    songTitle = "안타송",
                     teamId = TeamId("KIA"),
                     isPlaying = false
                 ),
