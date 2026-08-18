@@ -5,10 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -24,7 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
@@ -50,6 +54,7 @@ import com.gms.cheerlotandroid.domain.model.team.TeamId
 import com.gms.cheerlotandroid.presentation.search.component.SearchTextField
 import com.gms.cheerlotandroid.presentation.teammembers.TeamMembersRow
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun SearchScreen(
     onOpenBasePlayback: (teamId: TeamId, cheerSongId: String, playerName: String) -> Unit,
@@ -74,6 +79,18 @@ internal fun SearchScreen(
         onDispose { keyboardController.hideKeyboard(focusManager) }
     }
 
+    // IME를 back/내림 버튼으로 직접 내리면 포커스가 남아 커서가 깜빡여서, IME가 사라질 때 포커스를 정리합니다.
+    val isImeVisible = WindowInsets.isImeVisible
+    var hasShownIme by remember { mutableStateOf(false) }
+    LaunchedEffect(isImeVisible) {
+        if (isImeVisible) {
+            hasShownIme = true
+        } else if (hasShownIme) {
+            hasShownIme = false
+            focusManager.clearFocus()
+        }
+    }
+
     SearchContent(
         state = uiState,
         onQueryChange = viewModel::onQueryChange,
@@ -90,7 +107,6 @@ internal fun SearchScreen(
                 onOpenBasePlayback(teamId, song.id, row.playerName)
             }
         },
-        onRetry = viewModel::retry,
         onDismissToast = viewModel::dismissToast,
         modifier = modifier
     )
@@ -110,7 +126,6 @@ private fun SearchContent(
     onQueryChange: (String) -> Unit,
     focusRequester: FocusRequester,
     onTapResult: (TeamMembersRow) -> Unit,
-    onRetry: () -> Unit,
     onDismissToast: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -130,12 +145,18 @@ private fun SearchContent(
                     query = state.query,
                     onQueryChange = onQueryChange,
                     focusRequester = focusRequester,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 val teamId = state.teamId
                 when {
-                    // iOS SearchView의 ProgressView()와 동일하게 로딩 중엔 스피너를 최우선으로 보여줍니다.
+                    // 팀 로딩 중(teamId=null)이거나 검색어가 비면, 스피너보다 이 안내를 우선해 진입 시 깜빡임을 막습니다.
+                    teamId == null || state.query.isBlank() -> SearchMessage(
+                        text = "우리 팀 선수를 검색해보세요",
+                        imageRes = R.drawable.no_game,
+                        modifier = Modifier.weight(1f)
+                    )
+                    // 검색어가 있는데 아직 로스터를 불러오는 중이면 스피너를 보여줍니다.
                     state.isLoading -> Box(
                         modifier = Modifier
                             .weight(1f)
@@ -144,20 +165,6 @@ private fun SearchContent(
                     ) {
                         CircularProgressIndicator()
                     }
-                    teamId == null -> SearchMessage(
-                        text = "설정에서 응원 팀을 선택해주세요",
-                        modifier = Modifier.weight(1f)
-                    )
-                    state.errorMessage != null -> SearchMessage(
-                        text = state.errorMessage,
-                        onRetry = onRetry,
-                        modifier = Modifier.weight(1f)
-                    )
-                    state.query.isBlank() -> SearchMessage(
-                        text = "우리 팀 선수를 검색해보세요",
-                        imageRes = R.drawable.no_game,
-                        modifier = Modifier.weight(1f)
-                    )
                     state.results.isEmpty() -> SearchMessage(
                         text = "검색 결과가 없습니다",
                         imageRes = R.drawable.no_season,

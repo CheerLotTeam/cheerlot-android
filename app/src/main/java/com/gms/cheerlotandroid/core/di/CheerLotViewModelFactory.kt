@@ -71,7 +71,7 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(LineupPlaybackViewModel::class.java) -> {
                 LineupPlaybackViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
-                    getLineupUseCase = appContainer.getLineupUseCase,
+                    observeLineupUseCase = appContainer.observeLineupUseCase,
                     getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
                     getTeamUseCase = appContainer.getTeamUseCase,
                     audioPlayer = appContainer.audioPlayer,
@@ -89,7 +89,8 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(TeamMembersViewModel::class.java) -> {
                 TeamMembersViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
-                    getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
+                    observeAllPlayersUseCase = appContainer.observeAllPlayersUseCase,
+                    syncAllPlayersUseCase = appContainer.syncAllPlayersUseCase,
                     isGameDayUseCase = appContainer.isGameDayUseCase,
                     playTeamMembersUseCase = appContainer.playTeamMembersUseCase,
                 ) as T
@@ -98,7 +99,7 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(SearchViewModel::class.java) -> {
                 SearchViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
-                    getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
+                    observeAllPlayersUseCase = appContainer.observeAllPlayersUseCase,
                     isGameDayUseCase = appContainer.isGameDayUseCase,
                     playSearchResultUseCase = appContainer.playSearchResultUseCase,
                 ) as T

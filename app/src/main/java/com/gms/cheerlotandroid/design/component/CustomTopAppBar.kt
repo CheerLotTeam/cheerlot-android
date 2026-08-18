@@ -174,7 +174,7 @@ private fun NavigationIconSpacer() {
 private fun LargeTitleText(title: String) {
     Text(
         text = title,
-        style = CheerLotTextStyle.B3,
+        style = CheerLotTextStyle.B2,
         color = GrayScaleColor.GrayBlack,
         maxLines = 1,
         softWrap = false,
@@ -265,7 +265,8 @@ private fun ProfileIconButton(onClick: () -> Unit) {
         Icon(
             imageVector = Icons.Filled.AccountCircle,
             contentDescription = "프로필",
-            tint = GrayScaleColor.Gray800
+            tint = GrayScaleColor.Gray800,
+            modifier = Modifier.size(27.dp)
         )
     }
 }

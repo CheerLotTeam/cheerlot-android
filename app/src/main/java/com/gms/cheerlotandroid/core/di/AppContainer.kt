@@ -24,12 +24,15 @@ import com.gms.cheerlotandroid.domain.repository.UserSettingsRepository
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetBenchPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
+import com.gms.cheerlotandroid.domain.usecase.lineup.ObserveLineupUseCase
 import com.gms.cheerlotandroid.domain.usecase.lineup.SwapLineupPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayLineupSongsUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlaySearchResultUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlayTeamMembersUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.player.GetPlayerDetailUseCase
+import com.gms.cheerlotandroid.domain.usecase.player.ObserveAllPlayersUseCase
+import com.gms.cheerlotandroid.domain.usecase.player.SyncAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.settings.GetAppIconModeUseCase
 import com.gms.cheerlotandroid.domain.usecase.settings.SetAppIconModeUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetAllTeamsUseCase
@@ -103,6 +106,10 @@ class AppContainer(
         )
     }
 
+    val observeLineupUseCase: ObserveLineupUseCase by lazy {
+        ObserveLineupUseCase(playerRepository = playerRepository)
+    }
+
     val getLineupUseCase: GetLineupUseCase by lazy {
         GetLineupUseCase(playerRepository = playerRepository)
     }
@@ -117,6 +124,14 @@ class AppContainer(
 
     val getAllPlayersUseCase: GetAllPlayersUseCase by lazy {
         GetAllPlayersUseCase(playerRepository = playerRepository)
+    }
+
+    val observeAllPlayersUseCase: ObserveAllPlayersUseCase by lazy {
+        ObserveAllPlayersUseCase(playerRepository = playerRepository)
+    }
+
+    val syncAllPlayersUseCase: SyncAllPlayersUseCase by lazy {
+        SyncAllPlayersUseCase(playerRepository = playerRepository)
     }
 
     val getPlayerDetailUseCase: GetPlayerDetailUseCase by lazy {

@@ -12,17 +12,16 @@ import com.gms.cheerlotandroid.domain.service.analytics.AnalyticsService
 import com.gms.cheerlotandroid.domain.service.analytics.PlaySource
 import com.gms.cheerlotandroid.domain.service.analytics.PlayViewType
 import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupGameInfoUseCase
-import com.gms.cheerlotandroid.domain.usecase.lineup.GetLineupUseCase
+import com.gms.cheerlotandroid.domain.usecase.lineup.ObserveLineupUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetTeamUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
@@ -31,7 +30,7 @@ import kotlinx.coroutines.flow.stateIn
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class LineupPlaybackViewModel(
     private val getSelectedTeamUseCase: GetSelectedTeamUseCase,
-    private val getLineupUseCase: GetLineupUseCase,
+    private val observeLineupUseCase: ObserveLineupUseCase,
     private val getLineupGameInfoUseCase: GetLineupGameInfoUseCase,
     private val getTeamUseCase: GetTeamUseCase,
     private val audioPlayer: AudioPlayer,
@@ -51,12 +50,16 @@ internal class LineupPlaybackViewModel(
             if (teamId == null) {
                 flowOf<ScreenInfo?>(null)
             } else {
+                // 재동기화 없이 로컬 라인업만 관찰합니다(메인 라인업 화면이 이미 동기화).
+                // 오프라인에서 셀을 눌러 진입해도 네트워크 예외로 죽지 않습니다.
                 combine(
-                    flow { emitAll(getLineupUseCase(teamId)) },
+                    observeLineupUseCase(teamId),
                     getLineupGameInfoUseCase(teamId)
                 ) { players, gameInfo -> buildScreenInfo(teamId, players, gameInfo) }
             }
         }
+        // 로컬 관찰이라 사실상 실패하지 않지만, 예외로 수집이 끊겨 앱이 죽지 않도록 방어합니다.
+        .catch { emit(null) }
 
     val uiState: StateFlow<LineupPlaybackUiState> = combine(
         screenInfoFlow,

@@ -1,7 +1,6 @@
 package com.gms.cheerlotandroid.presentation.lineup.component
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -22,12 +21,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.gms.cheerlotandroid.R
@@ -46,6 +48,7 @@ import com.gms.cheerlotandroid.presentation.lineup.toLineupColors
 private val cardTopPadding = 20.dp
 private val cardBottomPadding = 10.dp
 private val cardContentSpacing = 4.dp
+private const val DOT_PATTERN_SCALE = 0.35f
 private val teamNameHeight = 44.5.dp
 private val gameInfoHeight = 26.5.dp
 private val separatorHeight = 1.dp
@@ -60,6 +63,7 @@ internal fun LineupCard(
     onToggleShowLineup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dotPattern = ImageBitmap.imageResource(R.drawable.team_card_bg)
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -69,18 +73,27 @@ internal fun LineupCard(
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawRect(brush = colors.cardBackgroundGradient, alpha = 0.2f)
         }
-        Image(
-            painter = painterResource(R.drawable.team_card_bg),
-            contentDescription = null,
+        Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
                     alpha = 0.75f
                     blendMode = BlendMode.Softlight
                     compositingStrategy = CompositingStrategy.Offscreen
-                },
-            contentScale = ContentScale.Crop
-        )
+                }
+        ) {
+            drawRect(
+                brush = ShaderBrush(
+                    ImageShader(dotPattern, TileMode.Repeated, TileMode.Repeated).apply {
+                        setLocalMatrix(
+                            android.graphics.Matrix().apply {
+                                setScale(DOT_PATTERN_SCALE, DOT_PATTERN_SCALE)
+                            }
+                        )
+                    }
+                )
+            )
+        }
 
         Column(
             modifier = Modifier

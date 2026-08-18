@@ -46,7 +46,7 @@ internal fun ServiceAppInfoScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 20.dp)
+                .padding(start = 16.dp, end = 16.dp, bottom = 20.dp)
         )
     }
 }
