@@ -104,16 +104,13 @@ private fun TeamMembersList(
     val teamId = state.teamId
     val team = teamId?.let(TeamCatalog::findById)
 
+    // 팀을 읽어오는 짧은 순간 teamId가 null이라, 안내 문구 대신 스피너를 보여줍니다.
     if (teamId == null || team == null) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            item {
-                Text(text = "설정에서 응원 팀을 선택해주세요.", style = CheerLotTextStyle.M4, color = GrayScaleColor.Gray400)
-            }
+            CircularProgressIndicator()
         }
         return
     }
@@ -156,15 +153,6 @@ private fun TeamMembersList(
                     ) {
                         CircularProgressIndicator()
                     }
-                }
-
-                state.errorMessage != null -> item {
-                    Text(
-                        text = state.errorMessage,
-                        style = CheerLotTextStyle.M4,
-                        color = GrayScaleColor.Gray400,
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
                 }
 
                 else -> itemsIndexed(state.rows, key = { _, row -> row.id }) { index, row ->

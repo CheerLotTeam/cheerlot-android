@@ -89,7 +89,8 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(TeamMembersViewModel::class.java) -> {
                 TeamMembersViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
-                    getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
+                    observeAllPlayersUseCase = appContainer.observeAllPlayersUseCase,
+                    syncAllPlayersUseCase = appContainer.syncAllPlayersUseCase,
                     isGameDayUseCase = appContainer.isGameDayUseCase,
                     playTeamMembersUseCase = appContainer.playTeamMembersUseCase,
                 ) as T
