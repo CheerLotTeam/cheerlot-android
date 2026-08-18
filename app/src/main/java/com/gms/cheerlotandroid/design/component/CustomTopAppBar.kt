@@ -265,7 +265,8 @@ private fun ProfileIconButton(onClick: () -> Unit) {
         Icon(
             imageVector = Icons.Filled.AccountCircle,
             contentDescription = "프로필",
-            tint = GrayScaleColor.Gray800
+            tint = GrayScaleColor.Gray800,
+            modifier = Modifier.size(27.dp)
         )
     }
 }
