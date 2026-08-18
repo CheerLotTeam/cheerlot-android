@@ -3,7 +3,7 @@ package com.gms.cheerlotandroid.presentation.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gms.cheerlotandroid.domain.model.team.TeamId
-import com.gms.cheerlotandroid.domain.usecase.player.GetAllPlayersUseCase
+import com.gms.cheerlotandroid.domain.usecase.player.ObserveAllPlayersUseCase
 import com.gms.cheerlotandroid.domain.usecase.playback.PlaySearchResultUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
 import com.gms.cheerlotandroid.domain.usecase.team.IsGameDayUseCase
@@ -16,9 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -31,8 +29,7 @@ private data class TeamRows(
     val teamId: TeamId?,
     val rows: List<TeamMembersRow> = emptyList(),
     val isGameDay: Boolean = false,
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val isLoading: Boolean = false
 )
 
 // iOS SearchViewModel과 동일하게, 현재 선택된 팀 로스터 안에서만 선수 이름으로 찾습니다(전체 팀 통합
@@ -40,7 +37,7 @@ private data class TeamRows(
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class SearchViewModel(
     getSelectedTeamUseCase: GetSelectedTeamUseCase,
-    private val getAllPlayersUseCase: GetAllPlayersUseCase,
+    private val observeAllPlayersUseCase: ObserveAllPlayersUseCase,
     private val isGameDayUseCase: IsGameDayUseCase,
     private val playSearchResultUseCase: PlaySearchResultUseCase
 ) : ViewModel() {
@@ -52,34 +49,27 @@ internal class SearchViewModel(
 
     private val query = MutableStateFlow("")
     private val toastState = MutableStateFlow(ToastState())
-    private val refreshCount = MutableStateFlow(0)
 
+    // iOS SearchViewModel과 동일하게, 검색은 동기화(네트워크)하지 않고 이미 동기화된 로컬 로스터만
+    // 관찰합니다(전체선수/라인업이 최신화해둔 데이터). 네트워크를 타지 않으므로 에러/재시도 상태가 없습니다.
     private val teamRowsState: Flow<TeamRows> = getSelectedTeamUseCase()
         .flatMapLatest { teamId ->
             if (teamId == null) {
                 flowOf(TeamRows(teamId = null))
             } else {
-                refreshCount.flatMapLatest {
-                    combine(
-                        flow { emitAll(getAllPlayersUseCase(teamId)) },
-                        isGameDayUseCase(teamId),
-                    ) { players, isGameDay ->
-                        TeamRows(
-                            teamId = teamId,
-                            rows = players.toTeamMembersRows(),
-                            isGameDay = isGameDay,
-                        )
-                    }
-                        .onStart { emit(TeamRows(teamId = teamId, isLoading = true)) }
-                        .catch { throwable ->
-                            emit(
-                                TeamRows(
-                                    teamId = teamId,
-                                    errorMessage = throwable.message ?: "선수 목록을 불러오지 못했습니다."
-                                )
-                            )
-                        }
+                combine(
+                    observeAllPlayersUseCase(teamId),
+                    isGameDayUseCase(teamId),
+                ) { players, isGameDay ->
+                    TeamRows(
+                        teamId = teamId,
+                        rows = players.toTeamMembersRows(),
+                        isGameDay = isGameDay,
+                    )
                 }
+                    .onStart { emit(TeamRows(teamId = teamId, isLoading = true)) }
+                    // 로컬 Room Flow라 사실상 실패하지 않지만, 예외로 수집이 끊기지 않도록 빈 목록으로 폴백합니다.
+                    .catch { emit(TeamRows(teamId = teamId)) }
             }
         }
 
@@ -95,7 +85,6 @@ internal class SearchViewModel(
                 },
                 isGameDay = teamRows.isGameDay,
                 isLoading = teamRows.isLoading,
-                errorMessage = teamRows.errorMessage,
                 toastMessage = toast.message,
                 isToastVisible = toast.isVisible
             )
@@ -117,10 +106,6 @@ internal class SearchViewModel(
             teamId,
             uiState.value.isGameDay,
         )
-    }
-
-    fun retry() {
-        refreshCount.value += 1
     }
 
     fun dismissToast() {

@@ -98,7 +98,7 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(SearchViewModel::class.java) -> {
                 SearchViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
-                    getAllPlayersUseCase = appContainer.getAllPlayersUseCase,
+                    observeAllPlayersUseCase = appContainer.observeAllPlayersUseCase,
                     isGameDayUseCase = appContainer.isGameDayUseCase,
                     playSearchResultUseCase = appContainer.playSearchResultUseCase,
                 ) as T
