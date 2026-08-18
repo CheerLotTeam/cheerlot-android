@@ -71,7 +71,7 @@ class CheerLotViewModelFactory(
             modelClass.isAssignableFrom(LineupPlaybackViewModel::class.java) -> {
                 LineupPlaybackViewModel(
                     getSelectedTeamUseCase = appContainer.getSelectedTeamUseCase,
-                    getLineupUseCase = appContainer.getLineupUseCase,
+                    observeLineupUseCase = appContainer.observeLineupUseCase,
                     getLineupGameInfoUseCase = appContainer.getLineupGameInfoUseCase,
                     getTeamUseCase = appContainer.getTeamUseCase,
                     audioPlayer = appContainer.audioPlayer,
