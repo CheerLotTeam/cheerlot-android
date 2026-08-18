@@ -174,7 +174,7 @@ private fun NavigationIconSpacer() {
 private fun LargeTitleText(title: String) {
     Text(
         text = title,
-        style = CheerLotTextStyle.B3,
+        style = CheerLotTextStyle.B2,
         color = GrayScaleColor.GrayBlack,
         maxLines = 1,
         softWrap = false,
