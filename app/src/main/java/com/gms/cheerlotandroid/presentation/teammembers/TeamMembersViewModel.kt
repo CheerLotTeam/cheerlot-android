@@ -1,0 +1,120 @@
+package com.gms.cheerlotandroid.presentation.teammembers
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.gms.cheerlotandroid.domain.model.team.TeamId
+import com.gms.cheerlotandroid.domain.usecase.player.ObserveAllPlayersUseCase
+import com.gms.cheerlotandroid.domain.usecase.player.SyncAllPlayersUseCase
+import com.gms.cheerlotandroid.domain.usecase.playback.PlayTeamMembersUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.GetSelectedTeamUseCase
+import com.gms.cheerlotandroid.domain.usecase.team.IsGameDayUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+
+internal data class TeamMembersUiState(
+    val teamId: TeamId? = null,
+    val rows: List<TeamMembersRow> = emptyList(),
+    val isGameDay: Boolean = false,
+    val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
+    val toastMessage: String = "",
+    val isToastVisible: Boolean = false
+) {
+    val totalSongCount: Int get() = rows.count { it.hasSong }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+internal class TeamMembersViewModel(
+    private val getSelectedTeamUseCase: GetSelectedTeamUseCase,
+    private val observeAllPlayersUseCase: ObserveAllPlayersUseCase,
+    private val syncAllPlayersUseCase: SyncAllPlayersUseCase,
+    private val isGameDayUseCase: IsGameDayUseCase,
+    private val playTeamMembersUseCase: PlayTeamMembersUseCase
+) : ViewModel() {
+
+    private data class ToastState(
+        val message: String = "",
+        val isVisible: Boolean = false
+    )
+
+    private val refreshCount = MutableStateFlow(0)
+    private val toastState = MutableStateFlow(ToastState())
+
+    // iOS처럼 로컬 로스터를 관찰해 캐시를 보여주고(오프라인에도 안 막힘), 동기화는 백그라운드
+    // best-effort로 돌려 실패를 삼킵니다(성공 시 Room 갱신 → 자동 반영).
+    private val contentState = getSelectedTeamUseCase()
+        .flatMapLatest { teamId ->
+            if (teamId == null) {
+                flowOf(TeamMembersUiState())
+            } else {
+                refreshCount.flatMapLatest { refreshIndex ->
+                    combine(
+                        observeAllPlayersUseCase(teamId),
+                        isGameDayUseCase(teamId),
+                    ) { players, isGameDay ->
+                        TeamMembersUiState(
+                            teamId = teamId,
+                            rows = players.toTeamMembersRows(),
+                            isGameDay = isGameDay,
+                        )
+                    }
+                        .onStart {
+                            emit(
+                                TeamMembersUiState(
+                                    teamId = teamId,
+                                    isLoading = refreshIndex == 0,
+                                    isRefreshing = refreshIndex > 0
+                                )
+                            )
+                            // iOS syncData()처럼 네트워크 동기화는 best-effort로 수행하고 실패는 삼킵니다.
+                            runCatching { syncAllPlayersUseCase(teamId) }
+                        }
+                        .catch {
+                            // 로컬 관찰이 예외로 끊기지 않도록 빈 목록으로 폴백합니다(에러 UI 없음).
+                            emit(TeamMembersUiState(teamId = teamId))
+                        }
+                }
+            }
+        }
+
+    val uiState: StateFlow<TeamMembersUiState> =
+        combine(contentState, toastState) { state, toast ->
+            state.copy(toastMessage = toast.message, isToastVisible = toast.isVisible)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TeamMembersUiState())
+
+    fun refresh() {
+        refreshCount.value += 1
+    }
+
+    fun onTapPlayAll() {
+        val state = uiState.value
+        state.teamId?.let { playTeamMembersUseCase.playAll(state.rows, it, state.isGameDay) }
+    }
+
+    fun onTapSong(row: TeamMembersRow) {
+        val teamId = uiState.value.teamId ?: return
+        if (!row.hasSong) {
+            toastState.value = ToastState(message = "아직 개인 응원가가 없어요", isVisible = true)
+            return
+        }
+        playTeamMembersUseCase.playSelected(
+            row,
+            uiState.value.rows,
+            teamId,
+            uiState.value.isGameDay,
+        )
+    }
+
+    fun dismissToast() {
+        toastState.update { it.copy(isVisible = false) }
+    }
+}

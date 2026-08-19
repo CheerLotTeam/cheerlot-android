@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="system_bg">#FFFEFEFE</color>
+
+    <!-- 적응형 런처 아이콘 배경색 (팀별 브랜드 컬러, 기존 ic_launcher_<team>.png의 배경색과 동일) -->
+    <color name="ic_launcher_background">#FFFEFEFE</color>
+    <color name="ic_launcher_background_hanwha">#FFFF5500</color>
+    <color name="ic_launcher_background_kia">#FFEE1138</color>
+    <color name="ic_launcher_background_kt">#FF222021</color>
+    <color name="ic_launcher_background_lg">#FFD70F45</color>
+    <color name="ic_launcher_background_lotte">#FF0E2B58</color>
+    <color name="ic_launcher_background_nc">#FF1C5198</color>
+    <color name="ic_launcher_background_doosan">#FF090845</color>
+    <color name="ic_launcher_background_ssg">#FFD50F29</color>
+    <color name="ic_launcher_background_samsung">#FF004EE5</color>
+    <color name="ic_launcher_background_kiwoom">#FF780523</color>
 </resources>

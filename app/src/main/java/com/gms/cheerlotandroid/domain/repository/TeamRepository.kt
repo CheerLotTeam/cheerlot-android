@@ -1,0 +1,50 @@
+package com.gms.cheerlotandroid.domain.repository
+
+import com.gms.cheerlotandroid.domain.model.team.GameScheduleInfo
+import com.gms.cheerlotandroid.domain.model.team.TeamGameInfo
+import com.gms.cheerlotandroid.domain.model.team.TeamId
+import com.gms.cheerlotandroid.domain.model.team.TeamInfo
+import com.gms.cheerlotandroid.domain.model.team.TeamVersionInfo
+import kotlinx.coroutines.flow.Flow
+
+interface TeamRepository {
+    // 전체 팀을 모두 반환합니다.
+    fun getAllTeams(): List<TeamInfo>
+
+    // 팀 ID에 해당하는 팀 정보를 반환합니다.
+    fun getTeam(teamId: TeamId): TeamInfo?
+
+    // teams row가 없으면 만들어서, team_id를 참조하는 FK가 걸린 테이블에 안전하게 insert할 수 있게 보장합니다.
+    suspend fun ensureTeamRow(teamId: TeamId)
+
+    // 로컬에 저장된 버전 스냅샷. 팀 row가 없으면 null.
+    suspend fun getLocalVersions(teamId: TeamId): TeamVersionInfo?
+
+    // 서버에서 팀 version 조회
+    suspend fun fetchRemoteVersions(teamId: TeamId): TeamVersionInfo
+
+    // I/O 없는 순수 비교 함수. local이 null이거나 lineupVersion이 다르면 true.
+    fun isLineupSyncNeeded(local: TeamVersionInfo?, remote: TeamVersionInfo): Boolean
+
+    // I/O 없는 순수 비교 함수. local이 null이거나 playersVersion이 다르면 true.
+    fun isPlayersSyncNeeded(local: TeamVersionInfo?, remote: TeamVersionInfo): Boolean
+
+    // 라인업 동기화를 마친 뒤 버전 기록만 갱신할 때 호출합니다.
+    suspend fun markLineupSynced(teamId: TeamId, version: Int)
+
+    //전체 로스터 동기화를 마친 뒤 버전 기록만 갱신할 때 호출합니다.
+    suspend fun markPlayersSynced(teamId: TeamId, version: Int)
+
+    // 로컬 오늘 경기 정보를 관찰만 합니다.
+    fun observeGameInfo(teamId: TeamId): Flow<TeamGameInfo?>
+
+    // 서버에서 경기 정보를 무조건 호출해 저장합니다.
+    // 호출 시점의 스케줄 기준 isHome도 함께 스냅샷으로 저장합니다.
+    suspend fun refreshGameInfo(teamId: TeamId): TeamGameInfo
+
+    // 로컬 스케줄(최근/예정 3경기)을 관찰만 합니다.
+    fun observeGameSchedule(teamId: TeamId): Flow<List<GameScheduleInfo>>
+
+    // 캐시된 스케줄의 첫 경기 날짜가 오늘이 아닐 때만(또는 forceRefresh=true) 서버에서 불러 저장합니다.
+    suspend fun syncGameSchedule(teamId: TeamId, forceRefresh: Boolean = false): List<GameScheduleInfo>
+}

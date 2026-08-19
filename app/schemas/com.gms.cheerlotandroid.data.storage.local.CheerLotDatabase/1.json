@@ -1,0 +1,230 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "7cd4c3f4aefc1ab63a3684a10fccff7b",
+    "entities": [
+      {
+        "tableName": "teams",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`team_id` TEXT NOT NULL, `has_today_game` INTEGER NOT NULL, `opponent_team_id` TEXT, `starter_pitcher_name` TEXT, `last_game_date` TEXT, `lineup_updated_today` INTEGER NOT NULL, `is_season_ended` INTEGER NOT NULL, `is_home` INTEGER, `recent_games` TEXT NOT NULL, `lineup_version` INTEGER NOT NULL, `players_version` INTEGER NOT NULL, PRIMARY KEY(`team_id`))",
+        "fields": [
+          {
+            "fieldPath": "teamId",
+            "columnName": "team_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hasTodayGame",
+            "columnName": "has_today_game",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "opponentTeamId",
+            "columnName": "opponent_team_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "starterPitcherName",
+            "columnName": "starter_pitcher_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastGameDate",
+            "columnName": "last_game_date",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lineupUpdatedToday",
+            "columnName": "lineup_updated_today",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSeasonEnded",
+            "columnName": "is_season_ended",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isHome",
+            "columnName": "is_home",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "recentGames",
+            "columnName": "recent_games",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lineupVersion",
+            "columnName": "lineup_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playersVersion",
+            "columnName": "players_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "team_id"
+          ]
+        }
+      },
+      {
+        "tableName": "players",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`player_id` TEXT NOT NULL, `team_id` TEXT NOT NULL, `name` TEXT NOT NULL, `back_number` INTEGER NOT NULL, `position` TEXT NOT NULL, `bat_throw` TEXT NOT NULL, `batting_order` INTEGER, PRIMARY KEY(`player_id`), FOREIGN KEY(`team_id`) REFERENCES `teams`(`team_id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "playerId",
+            "columnName": "player_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "teamId",
+            "columnName": "team_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backNumber",
+            "columnName": "back_number",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "batThrow",
+            "columnName": "bat_throw",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "battingOrder",
+            "columnName": "batting_order",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "player_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_players_team_id",
+            "unique": false,
+            "columnNames": [
+              "team_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_players_team_id` ON `${TABLE_NAME}` (`team_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "teams",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "team_id"
+            ],
+            "referencedColumns": [
+              "team_id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "cheer_songs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`cheer_song_id` TEXT NOT NULL, `player_id` TEXT NOT NULL, `title` TEXT NOT NULL, `lyrics` TEXT NOT NULL, `audio_url` TEXT NOT NULL, PRIMARY KEY(`cheer_song_id`), FOREIGN KEY(`player_id`) REFERENCES `players`(`player_id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "cheerSongId",
+            "columnName": "cheer_song_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerId",
+            "columnName": "player_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lyrics",
+            "columnName": "lyrics",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "audioUrl",
+            "columnName": "audio_url",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "cheer_song_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_cheer_songs_player_id",
+            "unique": false,
+            "columnNames": [
+              "player_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_cheer_songs_player_id` ON `${TABLE_NAME}` (`player_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "players",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "player_id"
+            ],
+            "referencedColumns": [
+              "player_id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7cd4c3f4aefc1ab63a3684a10fccff7b')"
+    ]
+  }
+}

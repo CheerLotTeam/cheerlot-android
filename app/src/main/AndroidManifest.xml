@@ -2,27 +2,211 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
+        android:name=".app.CheerLotApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CheerLot">
+
+        <!-- targetSdk 36(Android 16)부터 sw>=600dp(태블릿 등)에서 screenOrientation 제한이 무시됨.
+             태블릿에서도 세로(레터박스) 유지를 위해 opt-out. API 37부터는 불가한 임시 조치. -->
+        <property
+            android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+            android:value="true" />
+
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="@bool/firebase_crashlytics_collection_enabled" />
+
         <activity
-            android:name=".MainActivity"
+            android:name=".app.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.CheerLot"
-            android:windowSoftInputMode="adjustResize">
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.CheerLot.Starting"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!--
+        iOS의 alternateIconName과 달리 Android에는 런처 아이콘을 코드에서 바로 바꾸는 API가 없어,
+        activity-alias를 미리 등록해두고 AppIconSwitcher가 PackageManager로 하나만 켜고 나머지는
+        꺼서 아이콘을 바꿉니다. targetActivity는 전부 MainActivity로 동일합니다.
+        MainActivity 자신은 LAUNCHER intent-filter를 갖지 않고(alias로만 진입), 항상 활성 상태를
+        유지해야 합니다 — alias가 가리키는 실제 컴포넌트가 비활성화되면 alias 자체도 실행할 수 없게
+        되므로, AppIconSwitcher는 MainActivity는 건드리지 않고 alias 11개(기본 포함)만 토글합니다.
+        -->
+        <activity-alias
+            android:name=".app.icon.DefaultAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:targetActivity=".app.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.HanwhaAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_hanwha"
+            android:roundIcon="@mipmap/ic_launcher_hanwha_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.KiaAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_kia"
+            android:roundIcon="@mipmap/ic_launcher_kia_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.KtAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_kt"
+            android:roundIcon="@mipmap/ic_launcher_kt_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.LgAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_lg"
+            android:roundIcon="@mipmap/ic_launcher_lg_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.LotteAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_lotte"
+            android:roundIcon="@mipmap/ic_launcher_lotte_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.NcAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_nc"
+            android:roundIcon="@mipmap/ic_launcher_nc_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.DoosanAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_doosan"
+            android:roundIcon="@mipmap/ic_launcher_doosan_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.SsgAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_ssg"
+            android:roundIcon="@mipmap/ic_launcher_ssg_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.SamsungAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_samsung"
+            android:roundIcon="@mipmap/ic_launcher_samsung_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".app.icon.KiwoomAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_kiwoom"
+            android:roundIcon="@mipmap/ic_launcher_kiwoom_round"
+            android:targetActivity=".app.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <service
+            android:name=".core.media.CheerLotPlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
